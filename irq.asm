@@ -1,4 +1,3 @@
-.include "model.inc"
 .ifdef PAL
 LINES           = 312
 CYCLES_PER_LINE = 71
