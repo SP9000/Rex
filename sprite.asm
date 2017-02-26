@@ -18,6 +18,7 @@ next_alpha = zp::tmpe
 alpha      = zp::tmpf
 bakup      = zp::tmp10
 next_cols  = mem::spare
+
 ;19 cycles
 .macro shift_blit
         lsr             ;2
@@ -31,7 +32,6 @@ next_cols  = mem::spare
         lsr             ;2
         ror next_col    ;5
 .endmacro
-
 
 ;--------------------------------------
 ;turn on a very simple sprite (8x8)
@@ -363,6 +363,47 @@ next_cols  = mem::spare
         bpl @l0
         rts
 .endproc
+
+;--------------------------------------
+.export __sprite_setx
+.proc __sprite_setx
+	stx zp::tmp0
+	sty zp::tmp0+1
+	ldy #$00
+	sta (zp::tmp0),y
+	rts
+.endproc
+
+;--------------------------------------
+.export __sprite_sety
+.proc __sprite_sety
+	stx zp::tmp0
+	sty zp::tmp0+1
+	ldy #$01
+	sta (zp::tmp0),y
+	rts
+.endproc
+
+;--------------------------------------
+.export __sprite_w
+.proc __sprite_w
+	stx zp::tmp0
+	sty zp::tmp0+1
+	ldy #2
+	lda (zp::tmp0),y
+	rts
+.endproc
+
+;--------------------------------------
+.export __sprite_h
+.proc __sprite_h
+	stx zp::tmp0
+	sty zp::tmp0+1
+	ldy #3
+	lda (zp::tmp0),y
+	rts
+.endproc
+
 ;--------------------------------------
 .export __sprite_testsprite
 __sprite_testsprite:

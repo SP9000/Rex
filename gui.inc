@@ -1,3 +1,5 @@
+.import __gui_txt
+
 .scope gui
-	txt = __gui_text ;display the message in (YX)
+	txt = __gui_txt ;display the message in (YX)
 .endscope

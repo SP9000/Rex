@@ -1,9 +1,13 @@
-.include "bitmap.inc"
-.include "text.inc"
-.include "sprite.inc"
 .include "app_sprites.inc"
-.include "joystick.inc"
+.include "bitmap.inc"
+.include "file.inc"
 .include "irq.inc"
+.include "joystick.inc"
+.include "room.inc"
+.include "sprite.inc"
+.include "text.inc"
+
+.import test
 
 ;------------------------------------------------------------------------------
 .segment "SETUP"
@@ -21,24 +25,30 @@ start:
         lda #$20
         jsr irq::raster
         jmp enter
+
 ;------------------------------------------------------------------------------
 .CODE
 enter:
         jsr bm::init
         jsr bm::clr
 
-        lda #$00
-        sta text::colstart
-        lda #testlen
-        sta text::len
-        lda #5
-        ldx #<test
-        ldy #>test
-        jsr text::puts
+	ldy #>overlayfile
+	ldx #<overlayfile
+	stx file::name
+	sty file::name+1
+	jsr file::load
+
+	ldx #<room1
+	ldy #>room1
+	stx file::name
+	sty file::name+1
+	jsr room::load
 
         ldx #<app::cursor
         ldy #>app::cursor
         jsr sprite::on
+
+	jsr test
 main:
         lda #$05
         cmp $9004
@@ -58,5 +68,12 @@ main:
 irq_handler:
         jmp $eabf
 
-test: .byte "hello, friends"
-testlen = *-test
+overlayfile:
+	.byt overlayfileend - overlayfile - 1
+	.byt "overlay.prg"
+overlayfileend:
+
+room1:
+	.byt room1end - room1 - 1
+	.byt "room.prg"
+room1end:
