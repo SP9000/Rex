@@ -6,6 +6,10 @@ rex.prg: $(SRC)
 
 test:
 	xvic -memory all -ntsc rex.d81
+
+draw:
+	xvic -memory all -ntsc minipaint.d64
+
 clean:
 	rm rex.prg
 	rm *.o

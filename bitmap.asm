@@ -26,6 +26,8 @@ COLMEM_ADDR = $9400
         sta $9000,y
         dey
         bpl @2
+	lda #$18
+	sta $900f
         rts
 @inittab: .byte $02,$fe,$fe,$eb,$00,$0c
 
