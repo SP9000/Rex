@@ -1,3 +1,5 @@
+import sys
+
 def export(filename, exportname):
     out = open(exportname, "wb")
     with open(filename, "rb") as f:
@@ -10,7 +12,10 @@ def export(filename, exportname):
             for b in f.read(112):
                 outbuff.append(b)
             f.read(192-112)
-
         out.write(bytes(outbuff))
+        print("exported {} as {} ({} bytes)".format(filename, exportname, len(outbuff)))
 
-export("tunnel.prg", "room.prg")
+if len(sys.argv) < 3:
+    print("usage: {} <input-filename> <output-filename>".format(sys.argv[0]))
+else:
+    export(sys.argv[1], sys.argv[2])

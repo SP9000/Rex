@@ -4,6 +4,9 @@ rex.prg: $(SRC)
 	c1541 -format "rex,rex" d81 rex.d81 -write rex.prg rex.prg -write overlay.prg overlay.prg -write room.prg room.prg
 	rm *.o
 
+export:
+	python export_room.py tunnel.prg room.prg
+
 test:
 	xvic -memory all -ntsc rex.d81
 
