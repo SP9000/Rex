@@ -279,7 +279,6 @@ next_cols  = mem::spare
 @last_col:
         lda (dst),y
         sta (bakup),y
-        lda (dst),y
         ora next_cols,y
 @smc3=*+1
         and next_cols+0,y

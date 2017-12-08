@@ -33,7 +33,7 @@ __app_cursor_sprite:
 .byte %11110111
 .byte %11111111
 ;back up
-.res 13
+.res 12*2
 
 .export __app_rock
 __app_rock:
@@ -69,4 +69,4 @@ __app_rock:
 .byte %11110111
 .byte %11111111
 ;back up
-.res 13
+.res 12*2

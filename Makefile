@@ -8,7 +8,7 @@ export:
 	python export_room.py tunnel.prg room.prg
 
 test:
-	xvic -memory all -ntsc rex.d81
+	xvic -virtualdev -memory all -ntsc rex.d81
 
 draw:
 	xvic -memory all -ntsc minipaint.d64
