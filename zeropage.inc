@@ -1,3 +1,6 @@
+.ifndef zeropage_inc
+zeropage_inc = 1
+
 .scope zp
 ;--------------------------------------
 ;reserved for routines' arguments
@@ -39,3 +42,5 @@ irq3 = $e9
 irq4 = $ea
 
 .endscope
+
+.endif

@@ -54,6 +54,8 @@ next_cols  = mem::spare
 
 ;--------------------------------------
 ;read in the sprite data for the sprite in (<.X, .Y>)
+.export __sprite_load
+__sprite_load:
 .proc read_in
         stx zp::tmp0
         sty zp::tmp0+1
@@ -201,6 +203,8 @@ next_cols  = mem::spare
 .export __sprite_on
 .proc __sprite_on
         jsr read_in             ;get the sprite data
+.export __sprite_draw
+__sprite_draw:
 ;clear the next column buffer and the next alpha buffer
         ldx h
         stx @smc1               ;set address of the next column alpha buffer
@@ -380,26 +384,6 @@ next_cols  = mem::spare
 	sty zp::tmp0+1
 	ldy #$01
 	sta (zp::tmp0),y
-	rts
-.endproc
-
-;--------------------------------------
-.export __sprite_w
-.proc __sprite_w
-	stx zp::tmp0
-	sty zp::tmp0+1
-	ldy #2
-	lda (zp::tmp0),y
-	rts
-.endproc
-
-;--------------------------------------
-.export __sprite_h
-.proc __sprite_h
-	stx zp::tmp0
-	sty zp::tmp0+1
-	ldy #3
-	lda (zp::tmp0),y
 	rts
 .endproc
 

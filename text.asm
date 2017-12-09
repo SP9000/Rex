@@ -119,7 +119,7 @@ l1:     lda (txtleft),y
         sta txtdst+1
 __text_len=*+1
         cpy #40
-        bne l0
+        bcc l0
         rts
 
 .export __text_charmap
