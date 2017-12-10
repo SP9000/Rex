@@ -1,12 +1,13 @@
-.include "item.inc"
+.include "inventory.inc"
 .include "sprite.inc"
 .include "text.inc"
+.include "thing.inc"
 .include "zeropage.inc"
 
 .CODE
 
 ; the bounds of the text area
-TXT_ROW_START = 14
+TXT_ROW_START = 20
 TXT_ROW_STOP  = 22
 TXT_COL_START = 2
 TXT_COL_STOP  = 18
@@ -73,21 +74,21 @@ invscroll: .byte 0 ;# of pixels the inventory is scrolled
 	.byte $1c ;skw
 @end:   inc @done
 @draw:	sty text::len
-	ldx #<@msg
-	ldy #>@msg
+	ldx @msg
+	ldy @msg+1
 	lda @row
 	jsr text::puts
 
 	lda @msg
 	clc
-	adc #TXT_COL_STOP-TXT_COL_START
+	adc text::len
 	sta @msg
 	lda #$00
 	adc @msg+1
 	sta @msg+1
 
 	lda @done
-	beq @0
+	bne @0
 	inc @row
 	lda @row
 	cmp #TXT_ROW_STOP
@@ -104,28 +105,38 @@ invscroll: .byte 0 ;# of pixels the inventory is scrolled
 @spr = zp::tmp0
 @ystart = zp::tmp2
 @item = zp::tmp3
+@thing = zp::tmp5
 	ldy #$00
 	sty @ystart
 	sty @item
 @0:	ldy @item
-	lda item::list,y
-	sta @spr
-	iny
-	lda item::list,y
-	sta @spr+1
+	cpy inv::len
+	bcc @1
+	rts
+
+@1:	lda inv::items,y
+	sta @thing
+	lda inv::items+1,y
+	sta @thing+1
+
+	; get the item's sprite
+	ldy #Thing::sprite
+	lda (@thing),y
+	tax
+	lda (@thing),y
+	tay
+	jsr sprite::load
 
 	lda #INV_XSTART
-	jsr sprite::setx
+	ldy sprite::xpos
 	lda #INV_YSTART
-	jsr sprite::sety
+	clc
+	adc @ystart
+	sta sprite::ypos
+	jsr sprite::draw
 
-	ldx @spr
-	ldy @spr+1
-	jsr sprite::on
-
-	ldx @spr
-	ldy @spr+1
-	jsr sprite::h
+	ldy #Sprite::h
+	lda (@spr),y
 	clc
 	adc @ystart
 	sta @ystart

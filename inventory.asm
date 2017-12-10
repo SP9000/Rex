@@ -2,9 +2,11 @@
 
 .CODE
 
-
-
+.export __inventory_len
+__inventory_len:
 len:   .byte 0  ; # of items in player's inventory
+.export __inventory_items
+__inventory_items:
 items: .res 256 ; the items in the player's inventory
 
 ;--------------------------------------
@@ -20,6 +22,7 @@ items: .res 256 ; the items in the player's inventory
 	sta items,x
 	tya
 	sta items+1,x
+	inc len
 	rts
 .endproc
 
