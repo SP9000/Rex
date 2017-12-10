@@ -1,13 +1,3 @@
-INV_SIZE = 64
-
-.export __item_list
-__item_list:
-	.res 2 * INV_SIZE
-
-.export __item_len
-__item_len:
-	.byt 0
-
 ;--------------------------------------
 ;additem
 .export __item_additem
@@ -15,13 +5,13 @@ __item_len:
 .endproc
 
 ;--------------------------------------
-;take
+; take executes the item in (XY)'s TAKE handler.
 .export __item_take
 .proc __item_take
 .endproc
 
 ;--------------------------------------
-;use
+; use executes the item in (XY)'s USE handler on the object in zp::tmp0.
 .export __item_use
 .proc __item_use
 .endproc
