@@ -16,18 +16,22 @@
 @chku:  bit $9111       ;up pressed?
         bne @chkd
         on_up           ;do the up button behavior
+	rts
 @chkd:  asl
         bit $9111       ;down pressed?
         bne @chkl
-        on_down         ;do the down button behavior 
+        on_down         ;do the down button behavior
+	rts
 @chkl:  asl
         bit $9111       ;left pressed?
         bne @chkf
         on_left         ;do the down button behavior
+	rts
 @chkf:  asl
         bit $9111       ;fire pressed?
         bne @chkr
         on_fire         ;do the right button behavior
+	rts
 @chkr:  lda $9120       ;right button pressed? (bit 7)
         bmi @done
         on_right        ;do the fire button behavior

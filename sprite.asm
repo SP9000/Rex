@@ -19,38 +19,14 @@ alpha      = zp::tmpf
 bakup      = zp::tmp10
 next_cols  = mem::spare
 
-;19 cycles
+;19 cycles 8 bytes
 .macro shift_blit
         lsr             ;2
         ror next_col    ;5
-        sec             ;2 
+        sec             ;2
         ror alpha       ;5
         ror next_alpha  ;5
 .endmacro
-;7 cycles
-.macro shift_blit_f
-        lsr             ;2
-        ror next_col    ;5
-.endmacro
-
-;--------------------------------------
-;turn on a very simple sprite (8x8)
-.proc __sprite_8xn_on
-@next   = zp::tmp0
-@sprite = zp::tmp1
-        stx @sprite
-        sty @sprite+1
-        ldy #$00
-        lda (@sprite),y
-.repeat 8, i
-        .repeat i
-                lsr
-                ror @next
-        .endrepeat
-
-        sta bm::columns,y
-.endrepeat 
-.endproc
 
 ;--------------------------------------
 ;read in the sprite data for the sprite in (<.X, .Y>)
@@ -67,13 +43,14 @@ __sprite_load:
         sta xpos
         txa
         iny
-        and #$f8
+	and #$f8
         lsr
         lsr
         tax
         lda (zp::tmp0),y
         sta ypos
-;get the bitmap destination address of this sprite
+
+	;get the bitmap destination address of this sprite
         lda bm::columns,x
         clc
         adc ypos
@@ -81,34 +58,40 @@ __sprite_load:
         lda bm::columns+1,x
         adc #$00
         sta dst+1
-;get the sprite's width and height
+
+	;get the sprite's width and height
         iny
         lda (zp::tmp0),y
-        sta w
+	sta w
         iny
         lda (zp::tmp0),y
         sta h
         iny
-        iny
-;get the address of the color data
+
+	;get the address of the color data
         tya
-        clc
+	sec
         adc zp::tmp0
         sta cdata
         lda zp::tmp1
         adc #$00
         sta cdata+1
-;get the address of the alpha mask
+
+	; get size of color/alpha/backup buffers
         ldx w
         ldy h
         jsr m::mul8
         pha
+
+	;get the address of the alpha mask
         clc
         adc cdata
         sta amask
         lda cdata+1
         adc #$00
         sta amask+1
+
+	; get the address of backup buffer
         pla
         adc amask
         sta bakup
@@ -117,101 +100,21 @@ __sprite_load:
         sta bakup+1
         rts
 .endproc
-;--------------------------------------
-.export __sprite_on_f
-.proc __sprite_on_f
-        jsr read_in             ;get the sprite data
-;clear the color buffer ($00)
-        lda #$00
-        ldx h
-@l0:    sta next_cols,x
-        dex
-        bpl @l0
 
-        lda #$08
-        sec
-        sbc xpos
-        ;beq @noshloop           ;no shift, skip ahead
-;get amount to shift*3
-        sta zp::tmp0
-        asl
-        adc zp::tmp0
-        sta @smc0
-;do w columns of blitting
-        ldx w
-        ldy #$ff
-;shift and blit the sprite
-@shloop0:
-        ldy h                   ;get # of lines to draw in this column
-        dey
-@shloop1:
-        lda #$00
-        sta next_col            ;clear next cdata to $00
-        lda (cdata),y
-        beq @next0              ;no data, skip to next line
-@smc0=*+1
-        bne @next0              ;if data, jump to the appropriate shift amount
-        shift_blit_f
-        shift_blit_f
-        shift_blit_f
-        shift_blit_f
-        shift_blit_f
-        shift_blit_f
-        shift_blit_f
-        shift_blit_f
-        ora (dst),y             ;OR with the current contents at the destination
-        ora next_cols,y         ;OR with the last column's data
-        sta (dst),y
-        lda next_col
-        sta next_cols,y         
-@next0: dey                     ;next row
-        bpl @shloop1            ;draw one column
-        dex                     ;decrement column counter
-        bne @cont               ;draw more columns
-;draw the last column
-        add16_8 dst, #$c0
-        ldy h
-        dey
-@last_col:
-        lda next_cols,y
-        sta (dst),y
-        dey
-        bpl @last_col
-        rts                     ;done
-;update the color, alpha mask, and destination pointers
-@cont:
-        adc16_8 cdata, h
-        add16_8 dst, #$c0
-@next_col:
-        beq @done
-        jmp @shloop0            ;draw the next column
-
-;do unshifted blit
-@noshloop:
-        inc $900f
-        jmp *
-        lda cdata,x
-        and amask,x 
-        ora (cdata),y
-        sta (cdata),y
-        inx
-        cpx w 
-        bcc @noshloop
-@done:  rts
-.endproc
 ;--------------------------------------
 .export __sprite_on
 .proc __sprite_on
-        jsr read_in             ;get the sprite data
+        jsr __sprite_load ;get the sprite data
+
 .export __sprite_draw
 __sprite_draw:
-;clear the next column buffer and the next alpha buffer
         ldx h
-        stx @smc1               ;set address of the next column alpha buffer
-        stx @smc2    
+	stx @smc0
+        stx @smc2               ;set address of the next column alpha buffer
         stx @smc3
-        stx @l1+1               ;once again
+        stx @smc4
         lda #$00
+
 ;clear the color buffer ($00)
 @l0:    sta next_cols,x
         dex
@@ -219,6 +122,7 @@ __sprite_draw:
 ;clear the alpha buffer ($FF)
         lda #$ff
         ldx h
+@smc0=*+1
 @l1:    sta next_cols+0,x       ;SMC
         dex
         bpl @l1
@@ -226,12 +130,15 @@ __sprite_draw:
         lda #$08
         sec
         sbc xpos
-        ;beq @noshloop           ;no shift, skip ahead
+	bpl :+
+	inc $900f
+	jmp *-3
 ;get amount to shift*8
+:	asl
         asl
         asl
-        asl
-        sta @smc0
+        sta @smc1
+	;jmp *
 ;do w columns of blitting
         ldx w
         ldy #$ff
@@ -247,11 +154,10 @@ __sprite_draw:
         lda (amask),y
         sta alpha
         lda (dst),y             ;back up the area behind the sprite
-        sta (bakup),y   
+        sta (bakup),y
         lda (cdata),y
-        beq @next0              ;no data, skip to next line
-@smc0=*+1
-        bne @next0              ;if data, jump to the appropriate shift amount
+@smc1=*+1
+        bne *			;if data, jump to the appropriate shift amount
         shift_blit
         shift_blit
         shift_blit
@@ -263,15 +169,15 @@ __sprite_draw:
         ora (dst),y             ;OR with the current contents at the destination
         and alpha               ;clear the opaque 0's in the sprite data
         ora next_cols,y         ;OR with the last column's data
-@smc1=*+1
-        and next_cols+0,y       ;and with the last column's alpha
-        sta (dst),y             ;finally, draw 
-        lda next_col
-        sta next_cols,y         
-        lda next_alpha
 @smc2=*+1
+        and next_cols+0,y       ;and with the last column's alpha
+        sta (dst),y             ;finally, draw
+        lda next_col
         sta next_cols,y
-@next0: dey                     ;next row
+        lda next_alpha
+@smc3=*+1
+        sta next_cols,y
+	dey                     ;next row
         bpl @shloop1            ;draw one column
         dex                     ;decrement column counter
         bne @cont               ;draw more columns
@@ -284,7 +190,7 @@ __sprite_draw:
         lda (dst),y
         sta (bakup),y
         ora next_cols,y
-@smc3=*+1
+@smc4=*+1
         and next_cols+0,y
         sta (dst),y
         dey
@@ -296,23 +202,9 @@ __sprite_draw:
         add16_8 amask, h
         add16_8 bakup, h
         add16_8 dst, #$c0
-@next_col:
-        beq @done
         jmp @shloop0            ;draw the next column
-
-;do unshifted blit
-@noshloop:
-        inc $900f
-        jmp *
-        lda cdata,x
-        and amask,x 
-        ora (cdata),y
-        sta (cdata),y
-        inx
-        cpx w 
-        bcc @noshloop
-@done:  rts
 .endproc
+
 ;--------------------------------------
 .export __sprite_off
 .proc __sprite_off
@@ -340,31 +232,14 @@ __sprite_draw:
 
 ;do unshifted blit
 @noshloop:
-        inc $900f
-        jmp *
         lda cdata,x
-        and amask,x 
+        and amask,x
         ora (cdata),y
         sta (cdata),y
         inx
-        cpx w 
+        cpx w
         bcc @noshloop
 @done:  rts
-.endproc
-;--------------------------------------
-.export __sprite_off_f
-.proc __sprite_off_f
-        jsr read_in
-        ldx w
-@l0:    ldy h
-        lda #$00
-@l1:    sta (dst),y
-        dey
-        bpl @l1
-        add16_8 dst, #$c0
-        dex
-        bpl @l0
-        rts
 .endproc
 
 ;--------------------------------------
@@ -405,6 +280,6 @@ __sprite_testsprite:
 .byte %11000000
 .byte %10000000
 ;alpha mask
-.byte $ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff 
+.byte $ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff
 .endscope
 

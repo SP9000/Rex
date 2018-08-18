@@ -51,14 +51,14 @@ sprite = zp::tmp6
 	iny
 	lda (@thing),y
 	sta @handle+1
-	
+
 	iny
 	lda (@thing),y
 	sta desc
 	iny
 	lda (@thing),y
 	sta desc+1
-	
+
 	iny
 	lda (@thing),y
 	sta dat
@@ -87,14 +87,14 @@ sprite = zp::tmp6
 
 @go:	; TODO: GO through the door
 	rts
-	
+
 @key:	cpx @keylo
 	bne @disallow
 	cpy @keyhi
 	beq @allow
 @disallow:
 	rts
-	
+
 @allow:	lda #$00
 	ldy #DoorData::locked
 	sta (dat),y
@@ -105,7 +105,7 @@ sprite = zp::tmp6
 .endproc
 
 ;--------------------------------------
-; usekey is a convienience handler for things that behave like a takeable
+; usetake is a convienience handler for things that behave like a takeable
 ; item.
 .export __thing_usetake
 .proc __thing_usetake
@@ -117,28 +117,27 @@ sprite = zp::tmp6
 ; add adds the thing at (YX) to the thing table.
 .export __thing_add
 .proc __thing_add
-	stx zp::tmp0
-	sty zp::tmp0+1
+@t=zp::tmp0
+	stx @t
+	sty @t+1
 	lda __thing_num
 	asl
 	tax
 
-	lda zp::tmp0
+	lda @t
 	sta __thing_table,x
 	tya
 	sta __thing_table+1,x
 
+	; draw sprite
 	ldy #$02
-	lda (zp::tmp0),y
+	lda (@t),y
 	tax
 	iny
-	lda (zp::tmp0),y
+	lda (@t),y
 	tay
-	
-	ldx #<app::rock
-	ldy #>app::rock
 	jsr sprite::on
-	
+
 	rts
 .endproc
 

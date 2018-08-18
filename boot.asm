@@ -11,17 +11,17 @@
 
 ;------------------------------------------------------------------------------
 .segment "SETUP"
-.word head 
-head: .word @Next 
+.word head
+head: .word @Next
 .word .version
-.byte $9e 
+.byte $9e
 .asciiz "4621"
-@Next: .word 0 
+@Next: .word 0
 ;------------------------------------------------------------------------------
 start:
         jsr joy::init
         ldx #<irq_handler
-        ldy #>irq_handler 
+        ldy #>irq_handler
         lda #$20
         jsr irq::raster
         jmp enter
@@ -44,11 +44,10 @@ enter:
 	sty file::name+1
 	jsr room::load
 
+	jsr test
         ldx #<app::cursor
         ldy #>app::cursor
-        jsr sprite::on
-
-	jsr test
+	jsr sprite::on
 main:
         lda #$05
         cmp $9004
@@ -57,8 +56,8 @@ main:
         ldx #<app::cursor
         ldy #>app::cursor
         jsr sprite::off
+
         jsr joy::handle
-        lda app::cursor+4
 
         ldx #<app::cursor
         ldy #>app::cursor

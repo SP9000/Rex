@@ -26,7 +26,7 @@
 	rts
 .endproc
 
-; rock is a test "thing" 
+; rock is a test "thing"
 rock:
 	.word 1 ; id
 	.word app::rock

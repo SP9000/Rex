@@ -18,7 +18,6 @@ INV_XSTOP  = 120
 INV_YSTART = 14
 INV_YSTOP = 20
 
-
 ; bounds of scrolldown button
 SCROLLDOWN_X = 152
 SCROLLDOWN_Y = 120
@@ -31,10 +30,11 @@ SCROLLUP_Y = 20
 SCROLLUP_W = 8
 SCROLLUP_H = 8
 
-
 txtscroll: .byte 0 ;# of characters the text area is scrolled
 invscroll: .byte 0 ;# of pixels the inventory is scrolled
 
+; struct TextRegion console
+console: .byte 0,16,16,4
 
 ;--------------------------------------
 ;onfire
@@ -42,7 +42,7 @@ invscroll: .byte 0 ;# of pixels the inventory is scrolled
 ;
 .export __onfire
 .proc __onfire
-	
+
 .endproc
 
 ;--------------------------------------
@@ -123,6 +123,7 @@ invscroll: .byte 0 ;# of pixels the inventory is scrolled
 	ldy #Thing::sprite
 	lda (@thing),y
 	tax
+	iny
 	lda (@thing),y
 	tay
 	jsr sprite::load
@@ -152,4 +153,16 @@ invscroll: .byte 0 ;# of pixels the inventory is scrolled
 ;
 .export __gui_scrollinv
 .proc __gui_scrollinv
+.endproc
+
+;--------------------------------------
+;textinput
+.export __gui_textinput
+__gui_textinput:
+	jsr __gui_txt
+;--------------------------------------
+;input
+.export __gui_input
+.proc __gui_input
+	rts
 .endproc
