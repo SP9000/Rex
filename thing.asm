@@ -23,22 +23,18 @@ sprite = zp::tmp6
 .endstruct
 
 ;--------------------------------------
-; use
+; use runs the handler for the thing given in .A
 .export __thing_use
 .proc __thing_use
 @thing = zp::tmp0
-	sta zp::tmp0
 	asl
-	asl
-	adc zp::tmp0
 	tay
-
 	lda __thing_table,y
 	sta @thing
 	lda __thing_table+1,y
 	sta @thing+1
 
-	ldy #$02
+	ldy #Thing::sprite
 	lda (@thing),y
 	sta sprite
 	iny
@@ -67,7 +63,77 @@ sprite = zp::tmp6
 	sta dat+1
 
 @handle=*+1
-	jsr $ffff
+	jmp $ffff
+.endproc
+
+;--------------------------------------
+; handle runs the handler for the thing at the coordinates given in (.X,.Y) or,
+; if there is nothing at that position, does nothing.
+.export __thing_handle
+.proc __thing_handle
+@sprite=zp::tmp0
+@xpos=zp::tmp2
+@ypos=zp::tmp3
+@xstop=zp::tmp4
+@ystop=zp::tmp5
+@w=zp::tmp4
+@h=zp::tmp5
+@i=zp::tmp6
+@thing=zp::tmp7
+	lda #$00
+	sta @i
+@l0:	lda @i
+	asl
+	tay
+	lda __thing_table,y
+	tax
+	lda __thing_table+1,y
+	tay
+	stx @thing
+	sty @thing+1
+	ldy #Thing::sprite
+	lda (@thing),y
+	sta @sprite
+	iny
+	lda (@thing),y
+	sta @sprite+1
+
+	ldy #Sprite::ypos
+	lda (@sprite),y
+	sta @ypos
+	ldy #Sprite::xpos
+	lda (@sprite),y
+	sta @xpos
+	ldy #Sprite::w
+	lda (@sprite),y
+	asl
+	asl
+	asl
+	adc @xpos
+	sta @xstop
+	ldy #Sprite::h
+	lda (@sprite),y
+	adc @ypos
+	sta @ystop
+
+	lda app::cursor
+	cmp @xpos
+	bcc @next
+	cmp @xstop
+	bcs @next
+
+	lda app::cursor+1
+	cmp @ypos
+	bcc @next
+	cmp @ystop
+	bcs @next
+	lda @i
+	jmp __thing_use
+
+@next:  inc @i
+	lda @i
+	cmp __thing_num
+	bcc @l0
 	rts
 .endproc
 
@@ -110,6 +176,8 @@ sprite = zp::tmp6
 .export __thing_usetake
 .proc __thing_usetake
 	; TODO: add to inventory and remove from world.
+	inc $900f
+	jmp *-3
 	rts
 .endproc
 

@@ -40,7 +40,7 @@ items: .res 256 ; the items in the player's inventory
 	lda len
 	asl
 	sta @len2
-	
+
 	sty @itemhi
 	ldy #$00
 @l0:	lda @itemhi
@@ -66,7 +66,7 @@ items: .res 256 ; the items in the player's inventory
 	iny
 	cpy @len2
 	bcc @found
-	
+
 	dec len
 	rts
 .endproc

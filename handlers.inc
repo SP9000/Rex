@@ -1,4 +1,5 @@
 .include "app_sprites.inc"
+.include "thing.inc"
 
 ;--------------------------------------
 ;joystick handlers:
@@ -55,5 +56,6 @@
 ;------------------
 ;put your fire-button handler here
 .macro on_fire
+	jsr thing::handle
 .endmacro
 

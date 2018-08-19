@@ -12,8 +12,7 @@
 
 .import __sprite_on
 .import __sprite_off
-.import __sprite_setx
-.import __sprite_sety
+.import __sprite_set
 .import __sprite_w
 .import __sprite_h
 .import __sprite_testsprite
@@ -41,7 +40,6 @@
         on              = __sprite_on       ; turn on the sprite in (YX)
 	draw            = __sprite_draw     ; draw the sprite already loaded with "load"
         off             = __sprite_off      ; turn off the sprite in (YX) 
-	setx            = __sprite_setx     ; sets x-pos of sprite in (YX) to A
-	sety            = __sprite_sety     ; sets y-pos of sprite in (YX) to A
+	set             = __sprite_set     ; sets the sprite to the coordinates (.X,.Y)
         testsprite      = __sprite_testsprite
 .endscope

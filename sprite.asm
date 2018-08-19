@@ -42,11 +42,11 @@ __sprite_load:
         and #$07
         sta xpos
         txa
-        iny
 	and #$f8
         lsr
         lsr
         tax
+        iny
         lda (zp::tmp0),y
         sta ypos
 
@@ -130,18 +130,17 @@ __sprite_draw:
         lda #$08
         sec
         sbc xpos
-	bpl :+
-	inc $900f
-	jmp *-3
-;get amount to shift*8
-:	asl
+
+	;get amount to shift*8
+	asl
         asl
         asl
         sta @smc1
-	;jmp *
-;do w columns of blitting
+
+	;do w columns of blitting
         ldx w
         ldy #$ff
+
 ;shift and blit the sprite
 @shloop0:
         ldy h                   ;get # of lines to draw in this column
@@ -243,22 +242,25 @@ __sprite_draw:
 .endproc
 
 ;--------------------------------------
-.export __sprite_setx
-.proc __sprite_setx
-	stx zp::tmp0
-	sty zp::tmp0+1
-	ldy #$00
-	sta (zp::tmp0),y
-	rts
-.endproc
+.export __sprite_set
+.proc __sprite_set
+	sty ypos
+	txa
+	and #$07
+	sta xpos
+	and #$f8
+        lsr
+        lsr
+	tax
 
-;--------------------------------------
-.export __sprite_sety
-.proc __sprite_sety
-	stx zp::tmp0
-	sty zp::tmp0+1
-	ldy #$01
-	sta (zp::tmp0),y
+	;get the bitmap destination address of this sprite
+        lda bm::columns,x
+        clc
+        adc ypos
+        sta dst
+        lda bm::columns+1,x
+        adc #$00
+        sta dst+1
 	rts
 .endproc
 

@@ -1,4 +1,6 @@
+.include "bitmap.inc"
 .include "inventory.inc"
+.include "math.inc"
 .include "sprite.inc"
 .include "text.inc"
 .include "thing.inc"
@@ -13,10 +15,10 @@ TXT_COL_START = 2
 TXT_COL_STOP  = 18
 
 ; the bounds of the inventory area
-INV_XSTART = 20
-INV_XSTOP  = 120
+INV_XSTART = 4
+INV_XSTOP  = 24
 INV_YSTART = 14
-INV_YSTOP = 20
+INV_YSTOP = 96
 
 ; bounds of scrolldown button
 SCROLLDOWN_X = 152
@@ -103,18 +105,32 @@ console: .byte 0,16,16,4
 .export __gui_drawinv
 .proc __gui_drawinv
 @spr = zp::tmp0
-@ystart = zp::tmp2
-@item = zp::tmp3
-@thing = zp::tmp5
-	ldy #$00
-	sty @ystart
-	sty @item
-@0:	ldy @item
-	cpy inv::len
+@ystart = zp::tmp12
+@item = zp::tmp13
+@thing = zp::tmp14
+	; draw a white box for the inventory area
+	ldx #INV_XSTOP
+	ldy #INV_YSTOP
+	stx zp::tmp0
+	sty zp::tmp1
+	ldx #INV_XSTART
+	ldy #INV_YSTART
+	jsr __gui_wrect
+
+	lda #INV_YSTART+1
+	sta @ystart
+	lda #$00
+	sta @item
+
+@0:	inc @item
+	lda @item
+	cmp inv::len
 	bcc @1
 	rts
 
-@1:	lda inv::items,y
+@1:	asl
+	tay
+	lda inv::items,y
 	sta @thing
 	lda inv::items+1,y
 	sta @thing+1
@@ -128,12 +144,9 @@ console: .byte 0,16,16,4
 	tay
 	jsr sprite::load
 
-	lda #INV_XSTART
-	ldy sprite::xpos
-	lda #INV_YSTART
-	clc
-	adc @ystart
-	sta sprite::ypos
+	ldx #INV_XSTART+2
+	ldy @ystart
+	jsr sprite::set
 	jsr sprite::draw
 
 	ldy #Sprite::h
@@ -160,9 +173,92 @@ console: .byte 0,16,16,4
 .export __gui_textinput
 __gui_textinput:
 	jsr __gui_txt
+
 ;--------------------------------------
 ;input
 .export __gui_input
 .proc __gui_input
 	rts
+.endproc
+
+;--------------------------------------
+; wrect (slowly) draws a rectangle with the background color
+;wrect
+.export __gui_wrect
+.proc __gui_wrect
+@xstop=zp::tmp0
+@ystop=zp::tmp1
+@dst=zp::tmp2
+@lmask=zp::tmp4
+@rmask=zp::tmp5
+@xstart=zp::tmp6
+@ystart=zp::tmp7
+@getdst:
+	stx @xstart
+	sty @ystart
+	txa
+	and #$f8
+	lsr
+	lsr
+	tax
+	lda bm::columns,x
+	sta @dst
+	lda bm::columns+1,x
+	sta @dst+1
+
+	lda @xstart
+	and #$07
+
+	tax
+	lda #$00
+@getlmask:
+	sec
+	ror
+	dex
+	bpl @getlmask
+	sta @lmask
+
+	lda @xstop
+	sec
+	sbc @xstart
+	sta @xstart
+	lda @xstop
+	and #$07
+	tax
+	lda #$ff
+@getrmask:
+	lsr
+	dex
+	bpl @getrmask
+	sta @rmask
+
+	lda @lmask
+	jmp @blitcol ; blit first column
+
+@l0:	lda @xstart
+	beq @done
+	bpl @getmask
+@done:	rts
+
+@getmask:
+	sec
+	sbc #$08
+	sta @xstart
+	bmi @lastcol
+	lda #$00
+	.byt $2c
+@lastcol:
+	lda @rmask
+@blitcol:
+	sta @mask
+	ldy @ystart
+@mask=*+1
+@l1:	lda #$00
+	and (@dst),y
+	sta (@dst),y
+	iny
+	cpy @ystop
+	bcc @l1
+        add16_8 @dst, #$c0
+	jmp @l0
 .endproc
