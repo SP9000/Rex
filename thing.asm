@@ -1,6 +1,8 @@
 .include "zeropage.inc"
 .include "sprite.inc"
-.include "app_sprites.inc"
+.include "app.inc"
+
+.CODE
 
 thing = zp::tmp0
 desc = zp::tmp2
@@ -86,11 +88,9 @@ sprite = zp::tmp6
 	asl
 	tay
 	lda __thing_table,y
-	tax
+	sta @thing
 	lda __thing_table+1,y
-	tay
-	stx @thing
-	sty @thing+1
+	sta @thing+1
 	ldy #Thing::sprite
 	lda (@thing),y
 	sta @sprite
@@ -116,13 +116,13 @@ sprite = zp::tmp6
 	adc @ypos
 	sta @ystop
 
-	lda app::cursor
+	jsr app::curx
 	cmp @xpos
 	bcc @next
 	cmp @xstop
 	bcs @next
 
-	lda app::cursor+1
+	jsr app::cury
 	cmp @ypos
 	bcc @next
 	cmp @ystop

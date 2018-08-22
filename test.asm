@@ -29,7 +29,7 @@
 ; rock is a test "thing"
 rock:
 	.word 1 ; id
-	.word app::rock
+	.word gfx::rock
 	.word thing::usetake
 	.word rock_desc
 rock_desc:

@@ -2,6 +2,7 @@
 .include "gui.inc"
 .include "zeropage.inc"
 .include "memory.inc"
+.CODE
 
 ROOM_WIDTH = 96/8
 ROOM_HEIGHT = 112
@@ -28,7 +29,7 @@ numexits: .byt 0
 	ldy #>($1100 + ($c0*4) + 16)
 	stx @dst
 	sty @dst+1
-	
+
 	ldx #ROOM_WIDTH
 @l1:	ldy #$00
 @l0:	lda (@src),y
@@ -57,7 +58,7 @@ numexits: .byt 0
 
 	stx @room
 	sty @room+1
-	
+
 	ldy #$00
 	lda (@room),y
 	sta numrooms

@@ -1,5 +1,7 @@
 .include "zeropage.inc"
 
+.CODE
+
 .export __file_name
 __file_name:
 .word 0
@@ -7,8 +9,6 @@ __file_name:
 .export __file_size
 __file_size:
 .word 0
-
-.CODE
 
 .proc fsetup
 	ldx __file_name

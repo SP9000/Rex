@@ -1,5 +1,6 @@
 .include "handlers.inc"
 .CODE
+
 ;--------------------------------------
 .export __joy_init
 .proc __joy_init
@@ -9,6 +10,7 @@
         sta $9122       ;set DDR for VIA #2 to input for joy switch 3
         rts
 .endproc
+
 ;--------------------------------------
 .export __joy_handle
 .proc __joy_handle

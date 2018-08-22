@@ -1,8 +1,9 @@
 .include "zeropage.inc"
+.CODE
+
 BITMAP_ADDR = $1100
 COLMEM_ADDR = $9400
 
-.CODE
 ;--------------------------------------
 ;init
 ;MINIGRAFIK VIC/memory initialization
@@ -56,7 +57,7 @@ COLMEM_ADDR = $9400
         rts
 .endproc
 ;--------------------------------------
-.export __bm_clrpixel 
+.export __bm_clrpixel
 .proc __bm_clrpixel
         txa
         and #$07
@@ -75,7 +76,7 @@ COLMEM_ADDR = $9400
         rts
 .endproc
 ;--------------------------------------
-.export __bm_setpixel 
+.export __bm_setpixel
 .proc __bm_setpixel
         txa
         and #$07
@@ -133,7 +134,7 @@ COLMEM_ADDR = $9400
         sbc @x0
         sta @dx
         lda @y1
-        sec 
+        sec
         sbc @y0
         sta @dy
 @2dy = *+1
@@ -150,7 +151,7 @@ pixel_table_inverted:
 .byte $7f,$bf,$df,$ef,$f7,$fb,$fd,$fe
 
 .export __bm_columns
-__bm_columns: 
+__bm_columns:
 .word $1100
 .word $11c0
 .word $1280

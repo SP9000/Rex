@@ -1,4 +1,4 @@
-.include "app_sprites.inc"
+.include "app.inc"
 .include "thing.inc"
 
 ;--------------------------------------
@@ -15,42 +15,36 @@
 ;put your left-button handler here
 .macro on_left
 .local @skip
-        ldx app::cursor
-	beq @skip
-        dec app::cursor
-@skip:
+	ldx #-1
+	ldy #0
+	jsr app::movecur
 .endmacro 
 
 ;------------------
 ;put your right-button handler here
 .macro on_right
 .local @skip
-        ldx app::cursor
-        cpx #160-9
-	bcs @skip
-        inc app::cursor
-@skip:
+	ldx #1
+	ldy #0
+	jsr app::movecur
 .endmacro 
 
 ;------------------
 ;put your up-button handler here
 .macro on_up
 .local @skip
-        ldx app::cursor+1
-	beq @skip
-        dec app::cursor+1 
-@skip:
+	ldx #0
+	ldy #-1
+	jsr app::movecur
 .endmacro 
 
 ;------------------
 ;put your down-button handler here
 .macro on_down
 .local @skip
-        ldx app::cursor+1
-        cpx #192-9
-	bcs @skip
-        inc app::cursor+1
-@skip:
+	ldx #0
+	ldy #1
+	jsr app::movecur
 .endmacro
 
 ;------------------
@@ -59,3 +53,8 @@
 	jsr thing::handle
 .endmacro
 
+;------------------
+;put your 'SPACE' button handler here
+.macro on_space
+	jsr app::togglecur
+.endmacro

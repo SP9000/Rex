@@ -1,8 +1,10 @@
+.include "app.inc"
 .include "app_sprites.inc"
 .include "bitmap.inc"
 .include "file.inc"
 .include "irq.inc"
 .include "joystick.inc"
+.include "key.inc"
 .include "room.inc"
 .include "sprite.inc"
 .include "text.inc"
@@ -45,22 +47,23 @@ enter:
 	jsr room::load
 
 	jsr test
-        ldx #<app::cursor
-        ldy #>app::cursor
+	ldx app::cursor
+	ldy app::cursor+1
 	jsr sprite::on
 main:
         lda #$05
         cmp $9004
         bne *-3
 
-        ldx #<app::cursor
-        ldy #>app::cursor
+        ldx app::cursor
+        ldy app::cursor+1
         jsr sprite::off
 
         jsr joy::handle
+	;jsr key::handle
 
-        ldx #<app::cursor
-        ldy #>app::cursor
+        ldx app::cursor
+        ldy app::cursor+1
         jsr sprite::on
         jmp main
 

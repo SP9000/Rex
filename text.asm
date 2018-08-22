@@ -1,6 +1,7 @@
 .include "bitmap.inc"
 .include "memory.inc"
 .include "zeropage.inc"
+.CODE
 
 ESCAPE_CHARACTER = $ff
 
@@ -107,7 +108,7 @@ l1:     lda (txtleft),y
         sta (txtdst),y
         iny
         cpy #8
-        bne l1 
+        bne l1
         pla
         tay
         clc
