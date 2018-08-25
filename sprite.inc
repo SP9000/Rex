@@ -3,11 +3,9 @@
 .struct Sprite 
         xpos    .byte   ;the x coordinate
         ypos    .byte   ;the y coordinate
-        w       .byte   ;the width in characters
-        h       .byte   ;the height in pixels
         flags   .byte   ;user flags - unused
-        data    .byte   ;data - contains w*h bytes of color data followed
-                        ;by w*h bytes for the alpha mask
+	data    .word   ;data - ptr to w*h bytes of color data followed by w*h
+                        ;bytes for the alpha mask
 .endstruct
 
 .import __sprite_on
@@ -18,6 +16,7 @@
 .import __sprite_testsprite
 .import __sprite_load
 .import __sprite_draw
+.import __sprite_dim
 
 ; There are two types of sprite routines: standard and fast. 
 ; The standard routines back up and restore the background prior to rendering.
@@ -40,6 +39,7 @@
         on              = __sprite_on       ; turn on the sprite in (YX)
 	draw            = __sprite_draw     ; draw the sprite already loaded with "load"
         off             = __sprite_off      ; turn off the sprite in (YX) 
-	set             = __sprite_set     ; sets the sprite to the coordinates (.X,.Y)
+	set             = __sprite_set      ; sets the sprite to the coordinates (.X,.Y)
         testsprite      = __sprite_testsprite
+	dim             = __sprite_dim       ; get the dimensions of the sprite
 .endscope

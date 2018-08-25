@@ -60,7 +60,7 @@ main:
         jsr sprite::off
 
         jsr joy::handle
-	;jsr key::handle
+	jsr key::handle
 
         ldx app::cursor
         ldy app::cursor+1

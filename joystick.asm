@@ -14,6 +14,11 @@
 ;--------------------------------------
 .export __joy_handle
 .proc __joy_handle
+        lda #$00
+        sta $9113       ;set DDR for VIA #1 to input for joystick
+        lda #$7f
+        sta $9122       ;set DDR for VIA #2 to input for joy switch 3
+
         lda #$04
 @chku:  bit $9111       ;up pressed?
         bne @chkd

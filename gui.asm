@@ -149,8 +149,7 @@ console: .byte 0,16,16,4
 	jsr sprite::set
 	jsr sprite::draw
 
-	ldy #Sprite::h
-	lda (@spr),y
+	lda sprite::h
 	clc
 	adc @ystart
 	sta @ystart

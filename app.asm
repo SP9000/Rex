@@ -27,25 +27,32 @@
 ;--------------------------------------
 .export __app_togglecur
 .proc __app_togglecur
-	ldx __app_cursor
-	ldy __app_cursor+1
+	sei
+        ldx __app_cursor
+        ldy __app_cursor+1
+	ldx gfx::cursorsprite+Sprite::data
+	ldy gfx::cursorsprite+Sprite::data+1
 
-	cpx #<gfx::cursorsprite
+	cpx #<gfx::cursor
 	bne @setselect
-	cpy #>gfx::cursorsprite
+	cpy #>gfx::cursor
 	bne @setselect
 
 @setlook:
-	ldx #<gfx::looksprite
-	ldy #>gfx::looksprite
+	ldx #<gfx::eye
+	ldy #>gfx::eye
 	jmp @set
 
 @setselect:
-	ldx #<gfx::cursorsprite
-	ldy #>gfx::cursorsprite
+	ldx #<gfx::cursor
+	ldy #>gfx::cursor
 
-@set:	stx __app_cursor
-	sty __app_cursor+1
+@set:	stx gfx::cursorsprite+Sprite::data
+	sty gfx::cursorsprite+Sprite::data+1
+
+        ldx __app_cursor
+	ldy __app_cursor+1
+	cli
 	rts
 .endproc
 
@@ -53,8 +60,6 @@
 __app_cursor:
 .word gfx::cursorsprite
 
-looksprite:
-.word gfx::cursorsprite
 
 ;--------------------------------------
 .export __app_cury

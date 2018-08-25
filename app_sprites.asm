@@ -3,9 +3,19 @@
 __app_cursor_sprite:
 .byte 4
 .byte 1
+.byte 0
+.word __gfx_cursor
+
+.export __app_rock
+__app_rock:
+.byte 60
+.byte 70
+.byte 0
+.word rock_dat
+
+rock_dat:
 .byte 1
 .byte 12
-.byte 0
 ;color
 .byte %10000000
 .byte %11000000
@@ -35,14 +45,11 @@ __app_cursor_sprite:
 ;back up
 .res 12*2
 
-.export __app_rock
-__app_rock:
-.byte 60
-.byte 70
+.export __gfx_cursor
+__gfx_cursor:
 .byte 1
 .byte 12
-.byte 0
-;color
+
 .byte %10000000
 .byte %11000000
 .byte %10100000
@@ -55,7 +62,7 @@ __app_rock:
 .byte %00110010
 .byte %00010110
 .byte %00011100
-;alpha
+; alpha
 .byte %11111111
 .byte %11111111
 .byte %10111111
@@ -70,3 +77,13 @@ __app_rock:
 .byte %11111111
 ;back up
 .res 12*2
+
+.export __gfx_eye
+__gfx_eye:
+.byte 2
+.byte 8
+.byte 3,28,96,131,131,96,28,3
+.byte 192,56,6,193,193,6,56,192
+.byte $ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff
+.byte $ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff
+.res 8*3

@@ -104,15 +104,18 @@ sprite = zp::tmp6
 	ldy #Sprite::xpos
 	lda (@sprite),y
 	sta @xpos
-	ldy #Sprite::w
-	lda (@sprite),y
+	ldx @sprite
+	ldy @sprite
+
+	jsr sprite::dim
+	tay
+	txa
 	asl
 	asl
 	asl
 	adc @xpos
 	sta @xstop
-	ldy #Sprite::h
-	lda (@sprite),y
+	tya
 	adc @ypos
 	sta @ystop
 

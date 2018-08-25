@@ -59,25 +59,31 @@ __sprite_load:
         adc #$00
         sta dst+1
 
-	;get the sprite's width and height
-        iny
-        lda (zp::tmp0),y
-	sta w
-        iny
-        lda (zp::tmp0),y
-        sta h
-        iny
-
 	;get the address of the color data
-        tya
-	sec
-        adc zp::tmp0
+	iny
+	iny
+	lda (zp::tmp0),y
         sta cdata
-        lda zp::tmp1
-        adc #$00
+	iny
+        lda (zp::tmp0),y
         sta cdata+1
 
-	; get size of color/alpha/backup buffers
+	;get the sprite's width and height
+	ldy #$00
+	lda (cdata),y
+	sta w
+        iny
+	lda (cdata),y
+        sta h
+
+	lda cdata
+	clc
+	adc #02
+	sta cdata
+	bcc :+
+	inc cdata+1
+
+:	; get size of color/alpha/backup buffers
         ldx w
         ldy h
         jsr m::mul8
@@ -197,6 +203,7 @@ __sprite_draw:
         rts                     ;done
 ;update the color, alpha mask, back up, and destination pointers
 @cont:
+	clc
         adc16_8 cdata, h
         add16_8 amask, h
         add16_8 bakup, h
@@ -261,6 +268,28 @@ __sprite_draw:
         lda bm::columns+1,x
         adc #$00
         sta dst+1
+	rts
+.endproc
+
+;--------------------------------------
+; returns the sprite's width in .X and its height in .A
+.export __sprite_dim
+.proc __sprite_dim
+@spr=zp::tmp0
+	stx @spr
+	sty @spr+1
+
+	ldy #3
+	lda (@spr),y
+	tax
+	iny
+	lda (@spr),y
+	stx @spr
+	sta @spr+1
+	lda (@spr),y
+	tax
+	iny
+	lda (@spr),y
 	rts
 .endproc
 
