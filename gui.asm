@@ -66,14 +66,14 @@ console: .byte 0,16,16,4
 	lda #TXT_ROW_START
 	sta @row
 
-	ldy #$00
+@l0:	ldy #$00
 	sty @done
-@l0:	lda (@msg),y
+@l1:	lda (@msg),y
 	beq @end
 	iny
 	cpy #TXT_COL_STOP-TXT_COL_START
-	bcc @l0
-	.byte $1c ;skw
+	bcc @l1
+	.byte $2c ;skw
 @end:   inc @done
 @draw:	sty text::len
 	ldx @msg
@@ -85,11 +85,10 @@ console: .byte 0,16,16,4
 	clc
 	adc text::len
 	sta @msg
-	lda #$00
-	adc @msg+1
-	sta @msg+1
+	bcc :+
+	inc @msg+1
 
-	lda @done
+:	lda @done
 	bne @0
 	inc @row
 	lda @row

@@ -12,6 +12,8 @@
 .endproc
 
 ;--------------------------------------
+; handle runs the handler for inputs that are pressed.
+; Returns the carry set if a handler was activated.
 .export __joy_handle
 .proc __joy_handle
         lda #$00
@@ -23,25 +25,32 @@
 @chku:  bit $9111       ;up pressed?
         bne @chkd
         on_up           ;do the up button behavior
+	sec
 	rts
 @chkd:  asl
         bit $9111       ;down pressed?
         bne @chkl
         on_down         ;do the down button behavior
+	sec
 	rts
 @chkl:  asl
         bit $9111       ;left pressed?
         bne @chkf
         on_left         ;do the down button behavior
+	sec
 	rts
 @chkf:  asl
         bit $9111       ;fire pressed?
         bne @chkr
         on_fire         ;do the right button behavior
+	sec
 	rts
 @chkr:  lda $9120       ;right button pressed? (bit 7)
         bmi @done
         on_right        ;do the fire button behavior
-@done:  rts
+	sec
+	rts
+@done:  clc
+	rts
 .endproc
 

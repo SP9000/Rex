@@ -1,5 +1,6 @@
 .import __thing_add
 .import __thing_handle
+.import __thing_look
 .import __thing_num
 .import __thing_table
 .import __thing_use
@@ -16,10 +17,10 @@
 	data   .word ; address of thing specific data
 .endstruct
 
-
 .scope thing
 	handle = __thing_handle
 	use = __thing_use
+	look = __thing_look
 
 	usetake = __thing_usetake
 	table = __thing_table ; a table of all the things in the room

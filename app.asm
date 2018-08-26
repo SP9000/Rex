@@ -27,12 +27,8 @@
 ;--------------------------------------
 .export __app_togglecur
 .proc __app_togglecur
-	sei
-        ldx __app_cursor
-        ldy __app_cursor+1
 	ldx gfx::cursorsprite+Sprite::data
 	ldy gfx::cursorsprite+Sprite::data+1
-
 	cpx #<gfx::cursor
 	bne @setselect
 	cpy #>gfx::cursor
@@ -49,17 +45,8 @@
 
 @set:	stx gfx::cursorsprite+Sprite::data
 	sty gfx::cursorsprite+Sprite::data+1
-
-        ldx __app_cursor
-	ldy __app_cursor+1
-	cli
 	rts
 .endproc
-
-.export __app_cursor
-__app_cursor:
-.word gfx::cursorsprite
-
 
 ;--------------------------------------
 .export __app_cury
@@ -79,3 +66,9 @@ __app_cursor:
 	lda $ffff,y
 	rts
 .endproc
+
+;--------------------------------------
+.export __app_cursor
+__app_cursor:
+.word gfx::cursorsprite
+

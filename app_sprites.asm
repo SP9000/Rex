@@ -82,6 +82,7 @@ __gfx_cursor:
 __gfx_eye:
 .byte 2
 .byte 8
+
 .byte 3,28,96,131,131,96,28,3
 .byte 192,56,6,193,193,6,56,192
 .byte $ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff

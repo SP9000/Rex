@@ -17,6 +17,7 @@
 .import __sprite_load
 .import __sprite_draw
 .import __sprite_dim
+.import __sprite_pos
 
 ; There are two types of sprite routines: standard and fast. 
 ; The standard routines back up and restore the background prior to rendering.
@@ -42,4 +43,5 @@
 	set             = __sprite_set      ; sets the sprite to the coordinates (.X,.Y)
         testsprite      = __sprite_testsprite
 	dim             = __sprite_dim       ; get the dimensions of the sprite
+	pos             = __sprite_pos       ; get the position of sprite
 .endscope

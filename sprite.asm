@@ -286,10 +286,28 @@ __sprite_draw:
 	lda (@spr),y
 	stx @spr
 	sta @spr+1
+	ldy #$00
 	lda (@spr),y
 	tax
 	iny
 	lda (@spr),y
+	rts
+.endproc
+
+;--------------------------------------
+; pos returns the position of the sprite in YX as the coordinates in (.X, .Y)
+.export __sprite_pos
+.proc __sprite_pos
+@spr=zp::tmp0
+	stx @spr
+	sty @spr+1
+
+	ldy #0
+	lda (@spr),y
+	tax
+	iny
+	lda (@spr),y
+	tay
 	rts
 .endproc
 

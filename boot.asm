@@ -59,8 +59,8 @@ main:
         ldy app::cursor+1
         jsr sprite::off
 
-        jsr joy::handle
 	jsr key::handle
+        jsr joy::handle
 
         ldx app::cursor
         ldy app::cursor+1

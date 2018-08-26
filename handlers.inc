@@ -1,4 +1,6 @@
 .include "app.inc"
+.include "app_sprites.inc"
+.include "sprite.inc"
 .include "thing.inc"
 
 ;--------------------------------------
@@ -14,7 +16,6 @@
 ;------------------
 ;put your left-button handler here
 .macro on_left
-.local @skip
 	ldx #-1
 	ldy #0
 	jsr app::movecur
@@ -23,7 +24,6 @@
 ;------------------
 ;put your right-button handler here
 .macro on_right
-.local @skip
 	ldx #1
 	ldy #0
 	jsr app::movecur
@@ -32,7 +32,6 @@
 ;------------------
 ;put your up-button handler here
 .macro on_up
-.local @skip
 	ldx #0
 	ldy #-1
 	jsr app::movecur
@@ -41,7 +40,6 @@
 ;------------------
 ;put your down-button handler here
 .macro on_down
-.local @skip
 	ldx #0
 	ldy #1
 	jsr app::movecur
@@ -50,7 +48,18 @@
 ;------------------
 ;put your fire-button handler here
 .macro on_fire
-	jsr thing::handle
+.local @do
+.local @done
+	lda gfx::cursorsprite+Sprite::data
+	cmp #<gfx::eye
+	bne @do
+	lda gfx::cursorsprite+Sprite::data+1
+	cmp #>gfx::eye
+	bne @do
+	jsr thing::look
+	jmp @done
+@do:    jsr thing::handle
+@done:
 .endmacro
 
 ;------------------
