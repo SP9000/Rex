@@ -31,7 +31,6 @@ ESCAPE_CHARACTER = $ff
         rts
 .endproc
 
-
 ;--------------------------------------
 .export __text_colstart
 .export __text_len
