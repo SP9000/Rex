@@ -13,9 +13,10 @@
 #include "commands.h"
 #include "draw.h"
 #include "edit_enemy.h"
+#include "file.h"
 
 #define PORT 1234
-#define MAX_SOCKETS 2  // server + 1 client
+#define MAX_SOCKETS 128  // server + 1 client
 #define TRUE 1
 #define FALSE 0
 
@@ -28,15 +29,52 @@ static SDL_Window *win;
 static SDL_Renderer *renderer;
 static SDL_Surface *screenSurf;
 
+static struct Room room;
 static struct EnemyEdit enemies[NUM_ENEMIES];
 
 void redraw() {
+	int i;
 	SDL_SetRenderTarget(renderer, NULL);
 	SDL_SetRenderDrawColor(renderer, 0xff, 0xff, 0xff, 0xff);
 	SDL_RenderClear(renderer);
-	SDL_SetRenderDrawColor(renderer, 0x00, 0x00, 0x00, 0xff);
 	if (picTex != NULL) SDL_RenderCopy(renderer, picTex, NULL, NULL);
+	for (i = 0; i < NUM_ENEMIES; ++i) {
+		if (enemies[i].active && enemies[i].tex != NULL) {
+			struct EnemyEdit *ee = &enemies[i];
+			int w, h;
+			SDL_GetWindowSize(win, &w, &h);
+			SDL_Rect dstRect = {
+			    .x = ee->x, .y = ee->y, .w = ee->w, .h = ee->h};
+			if (SDL_RenderCopy(renderer, ee->tex, NULL, &dstRect) !=
+			    0)
+				printf("SDL_Error: %s\n", SDL_GetError());
+		}
+	}
 	SDL_RenderPresent(renderer);
+}
+
+void addenemy(char *name, char *img) {
+	int i;
+	for (i = 0; i < NUM_ENEMIES; ++i) {
+		if (!enemies[i].active) {
+			NewEnemyEdit(&enemies[i], renderer, name, img);
+			strcpy(room.enemies[room.numEnemies].name, name);
+			strcpy(room.enemies[room.numEnemies].imgfile, img);
+			memset(room.enemies[room.numEnemies].desc, '\0',
+			       sizeof(room.enemies[room.numEnemies].desc));
+			room.enemies[room.numEnemies].id = 0;
+			room.numEnemies++;
+			break;
+		}
+	}
+}
+void load(char *filename) {
+	int i;
+	loadroom(filename, &room);
+
+	memset(enemies, 0, sizeof(enemies));
+	for (i = 0; i < room.numEnemies; ++i)
+		addenemy(room.enemies[i].name, room.enemies[i].imgfile);
 }
 
 void runcmd(char *cmd) {
@@ -52,16 +90,23 @@ void runcmd(char *cmd) {
 	if (strncmp(argv[0], "setpic", sizeof("setpic")) == 0) {
 		picTex = setpic(renderer, argv[1]);
 	} else if (strncmp(argv[0], "addenemy", sizeof("addenemy")) == 0) {
-		int i;
-		if (argc != 2) {
+		if (argc != 3) {
+			printf("addenemy <name> <imgfile>\n");
 			return;
 		}
-		for (i = 0; i < NUM_ENEMIES; ++i) {
-			if (!enemies[i].active) {
-				NewEnemyEdit(&enemies[i], argv[1]);
-				break;
-			}
+		addenemy(argv[1], argv[2]);
+	} else if (strncmp(argv[0], "load", sizeof("load")) == 0) {
+		if (argc != 2) {
+			printf("load <filename>\n");
+			return;
 		}
+		loadroom(argv[1], &room);
+	} else if (strncmp(argv[0], "save", sizeof("save")) == 0) {
+		if (argc != 2) {
+			printf("save <filename>\n");
+			return;
+		}
+		saveroom(argv[1], &room);
 	} else {
 		printf("?\n");
 	}
@@ -99,13 +144,13 @@ int init() {
 }
 
 void run(TCPsocket serversock) {
-	TCPsocket sock = NULL;
+	static TCPsocket sockets[MAX_SOCKETS];
 	char recvBuff[1024];
+	int i;
 	int quit = FALSE;
 	SDLNet_SocketSet sockset = SDLNet_AllocSocketSet(MAX_SOCKETS);
 	SDLNet_TCP_AddSocket(sockset, serversock);
 
-	redraw();
 	while (!quit) {
 		SDL_Event evt;
 
@@ -130,30 +175,42 @@ void run(TCPsocket serversock) {
 		redraw();
 
 		/* check socket & recv commands */
-		if (sock == NULL) {
-			sock = SDLNet_TCP_Accept(serversock);
-			if (sock != NULL) {
-				printf("client connected\n");
-				SDLNet_TCP_AddSocket(sockset, sock);
+		TCPsocket newClient = SDLNet_TCP_Accept(serversock);
+		if (newClient != NULL) {
+			for (i = 0; i < MAX_SOCKETS; ++i) {
+				if (sockets[i] == NULL) {
+					printf("client connected\n");
+					sockets[i] = newClient;
+					SDLNet_TCP_AddSocket(sockset,
+							     newClient);
+					break;
+				}
 			}
-			continue;
+			if (newClient == NULL) {
+				printf("max clients already connected");
+			}
 		}
 		if (SDLNet_CheckSockets(sockset, 0) == -1) {
 			printf("net error: %s\n", SDLNet_GetError());
 		}
-		if (!SDLNet_SocketReady(sock)) continue;
-		if (SDLNet_TCP_Recv(sock, recvBuff, sizeof(recvBuff)) <= 0) {
-			printf("client disconnected\n");
-			SDLNet_TCP_Close(sock);
-			SDLNet_TCP_DelSocket(sockset, sock);
-			sock = NULL;
-			continue;
+		for (i = 0; i < MAX_SOCKETS; ++i) {
+			if (sockets[i] == NULL) continue;
+			if (!SDLNet_SocketReady(sockets[i])) continue;
+			if (SDLNet_TCP_Recv(sockets[i], recvBuff,
+					    sizeof(recvBuff)) <= 0) {
+				printf("client disconnected\n");
+				SDLNet_TCP_Close(sockets[i]);
+				SDLNet_TCP_DelSocket(sockset, sockets[i]);
+				sockets[i] = NULL;
+				continue;
+			}
+			puts(recvBuff);
+			runcmd(recvBuff);
 		}
-		puts(recvBuff);
-		runcmd(recvBuff);
 	}
-
-	if (sock != NULL) SDLNet_TCP_Close(sock);
+	for (i = 0; i < MAX_SOCKETS; ++i) {
+		if (sockets[i] != NULL) SDLNet_TCP_Close(sockets[i]);
+	}
 }
 
 void initconn(TCPsocket *socket) {

@@ -1,12 +1,14 @@
 #ifndef UTIL_H
 #define UTIL_H
 
+#include <SDL2/SDL.h>
 #include <stdio.h>
 #include <stdlib.h>
 
-#define WHITE 0xffffff  // 0xafefa12a
-#define BLACK 0x000000  // 0x11123422
+#define WHITE 0xffffff
+#define BLACK 0x000000
 
-void convert(char *, char *, int);
+void convert(uint8_t *, uint8_t *, int);
+SDL_Surface *loadimg(char *, int, int, int);
 
 #endif
