@@ -20,17 +20,23 @@
 #define TRUE 1
 #define FALSE 0
 
-#define NUM_ENEMIES 16  // max # of enemy-edit windows
+#define NUM_THINGS 16  // max # of enemy-edit windows
 
 #define ASPECT_RATIO 1.5  // width of pixels relative to height
 
 static SDL_Texture *picTex;
 static SDL_Window *win;
 static SDL_Renderer *renderer;
-static SDL_Surface *screenSurf;
 
 static struct Room room;
-static struct EnemyEdit enemies[NUM_ENEMIES];
+static struct ThingEdit things[NUM_THINGS];
+
+static void help() {
+	puts("setpic <image filepath>");
+	puts("addthing <name> <image filepath>");
+	puts("load <JSON filepath>");
+	puts("save <JSON filepath>");
+}
 
 void redraw() {
 	int i;
@@ -38,9 +44,9 @@ void redraw() {
 	SDL_SetRenderDrawColor(renderer, 0xff, 0xff, 0xff, 0xff);
 	SDL_RenderClear(renderer);
 	if (picTex != NULL) SDL_RenderCopy(renderer, picTex, NULL, NULL);
-	for (i = 0; i < NUM_ENEMIES; ++i) {
-		if (enemies[i].active && enemies[i].tex != NULL) {
-			struct EnemyEdit *ee = &enemies[i];
+	for (i = 0; i < NUM_THINGS; ++i) {
+		if (things[i].active && things[i].tex != NULL) {
+			struct ThingEdit *ee = &things[i];
 			int w, h;
 			SDL_GetWindowSize(win, &w, &h);
 			SDL_Rect dstRect = {
@@ -53,17 +59,13 @@ void redraw() {
 	SDL_RenderPresent(renderer);
 }
 
-void addenemy(char *name, char *img) {
+void addthing(char *name, char *img) {
 	int i;
-	for (i = 0; i < NUM_ENEMIES; ++i) {
-		if (!enemies[i].active) {
-			NewEnemyEdit(&enemies[i], renderer, name, img);
-			strcpy(room.enemies[room.numEnemies].name, name);
-			strcpy(room.enemies[room.numEnemies].imgfile, img);
-			memset(room.enemies[room.numEnemies].desc, '\0',
-			       sizeof(room.enemies[room.numEnemies].desc));
-			room.enemies[room.numEnemies].id = 0;
-			room.numEnemies++;
+	for (i = 0; i < NUM_THINGS; ++i) {
+		if (!things[i].active) {
+			NewThingEdit(&things[i], renderer, name, img);
+			room.things[room.numThings].id = 0;
+			room.numThings++;
 			break;
 		}
 	}
@@ -72,9 +74,11 @@ void load(char *filename) {
 	int i;
 	loadroom(filename, &room);
 
-	memset(enemies, 0, sizeof(enemies));
-	for (i = 0; i < room.numEnemies; ++i)
-		addenemy(room.enemies[i].name, room.enemies[i].imgfile);
+	memset(things, 0, sizeof(things));
+	for (i = 0; i < room.numThings; ++i)
+		addthing(
+		    getthing(room.things[i].id)->name,
+		    getsprite(getthing(room.things[i].id)->sprite)->imgfile);
 }
 
 void runcmd(char *cmd) {
@@ -89,12 +93,12 @@ void runcmd(char *cmd) {
 	}
 	if (strncmp(argv[0], "setpic", sizeof("setpic")) == 0) {
 		picTex = setpic(renderer, argv[1]);
-	} else if (strncmp(argv[0], "addenemy", sizeof("addenemy")) == 0) {
+	} else if (strncmp(argv[0], "addthing", sizeof("addthing")) == 0) {
 		if (argc != 3) {
-			printf("addenemy <name> <imgfile>\n");
+			printf("addthing <name> <imgfile>\n");
 			return;
 		}
-		addenemy(argv[1], argv[2]);
+		addthing(argv[1], argv[2]);
 	} else if (strncmp(argv[0], "load", sizeof("load")) == 0) {
 		if (argc != 2) {
 			printf("load <filename>\n");
@@ -107,6 +111,8 @@ void runcmd(char *cmd) {
 			return;
 		}
 		saveroom(argv[1], &room);
+	} else if (strncmp(argv[0], "help", sizeof("help")) == 0) {
+		help();
 	} else {
 		printf("?\n");
 	}
@@ -168,8 +174,8 @@ void run(TCPsocket serversock) {
 					quit = TRUE;
 				}
 			}
-			for (i = 0; i < NUM_ENEMIES; ++i) {
-				EnemyEditUpdate(&enemies[i], &evt);
+			for (i = 0; i < NUM_THINGS; ++i) {
+				ThingEditUpdate(&things[i], &evt);
 			}
 		}
 		redraw();

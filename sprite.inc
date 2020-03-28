@@ -1,13 +1,5 @@
 .include "zeropage.inc"
 
-.struct Sprite 
-        xpos    .byte   ;the x coordinate
-        ypos    .byte   ;the y coordinate
-        flags   .byte   ;user flags - unused
-	data    .word   ;data - ptr to w*h bytes of color data followed by w*h
-                        ;bytes for the alpha mask
-.endstruct
-
 .import __sprite_on
 .import __sprite_off
 .import __sprite_set

@@ -1,4 +1,5 @@
 .include "handlers.inc"
+.include "types.inc"
 .CODE
 
 ;--------------------------------------

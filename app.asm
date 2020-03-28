@@ -1,5 +1,6 @@
 .include "app_sprites.inc"
 .include "sprite.inc"
+.include "types.inc"
 .CODE
 
 ;--------------------------------------

@@ -4,7 +4,7 @@
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_net.h>
 
-struct EnemyEdit {
+struct ThingEdit {
 	SDL_Texture *tex;
 	uint8_t hp;
 	uint8_t weakness;  // ID of item that will kill
@@ -19,8 +19,8 @@ struct EnemyEdit {
 	TCPsocket socket;
 };
 
-struct EnemyEdit *NewEnemyEdit(struct EnemyEdit *, SDL_Renderer *, char *,
+struct ThingEdit *NewThingEdit(struct ThingEdit *, SDL_Renderer *, char *,
 			       char *);
-void EnemyEditUpdate(struct EnemyEdit *, SDL_Event *);
+void ThingEditUpdate(struct ThingEdit *, SDL_Event *);
 
 #endif

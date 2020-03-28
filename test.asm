@@ -6,7 +6,6 @@
 .include "joystick.inc"
 .include "text.inc"
 .include "sprite.inc"
-.include "thing.inc"
 .CODE
 
 .export test
@@ -16,7 +15,7 @@
 	jsr gui::txt
 	ldx #<rock
 	ldy #>rock
-	jsr thing::add
+	;jsr thing::add
 	ldx #<rock
 	ldy #>rock
 	jsr inv::add
@@ -31,7 +30,7 @@
 rock:
 	.word 1 ; id
 	.word gfx::rock
-	.word thing::usetake
+	;.word thing::usetake
 	.word rock_desc
 rock_desc:
 	.byte rock_desc_len, "a smooth purple pebble",0

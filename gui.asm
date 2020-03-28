@@ -3,7 +3,7 @@
 .include "math.inc"
 .include "sprite.inc"
 .include "text.inc"
-.include "thing.inc"
+.include "types.inc"
 .include "zeropage.inc"
 
 .CODE

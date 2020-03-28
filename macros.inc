@@ -25,15 +25,13 @@
 	.endif
 .endmacro
 
-; Increments 16-bit value at Addr.
-; Out: EQ/NE based on resulting 16-bit value
-; Preserved: A, X, Y
-.macro incw Addr
-	.local @Skip
-	inc Addr
-	bne @Skip
-	inc 1+(Addr)
-@Skip:
+; incw increments the 16-bit value at the address w.
+.macro incw w
+.local @skip
+	inc w
+	bne @skip
+	inc w+1
+@skip:
 .endmacro
 
 ; Adds Src to word at Addr.

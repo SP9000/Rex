@@ -77,5 +77,6 @@ overlayfileend:
 
 room1:
 	.byt room1end - room1 - 1
+room1:
 	.byt "room.prg"
 room1end:

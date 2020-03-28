@@ -1,7 +1,7 @@
 .include "app.inc"
 .include "app_sprites.inc"
+.include "room.inc"
 .include "sprite.inc"
-.include "thing.inc"
 
 ;--------------------------------------
 ;joystick handlers:
@@ -56,9 +56,9 @@
 	lda gfx::cursorsprite+Sprite::data+1
 	cmp #>gfx::eye
 	bne @do
-	jsr thing::look
+	jsr room::look
 	jmp @done
-@do:    jsr thing::handle
+@do:    jsr room::use
 @done:
 .endmacro
 
