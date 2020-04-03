@@ -11,7 +11,6 @@
 	gethandle = __room_gethandle
 	getsprite = __room_getsprite
 	getdesc = __room_getdesc
-
 	look = __room_look
 	use = __room_use
 .endscope

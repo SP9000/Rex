@@ -1,5 +1,6 @@
-.include "zeropage.inc"
+.include "macros.inc"
 .include "memory.inc"
+.include "zeropage.inc"
 
 .CODE
 
@@ -11,8 +12,89 @@ __file_name: .word 0
 .export __file_size
 __file_size: .word 0
 
+.export __file_lf
+__file_lf: .byte 2
+
 .export __file_loadaddr
 __file_loadaddr: .word mem::spare
+
+.export __file_eof
+__file_eof: .byte 0
+
+SA=2
+
+;--------------------------------------
+; open sets up the filename given in (YX) (of length given in .A)
+; Call loadb to load each byte
+.export __file_open
+.proc __file_open
+	jsr $ffc0 	; call OPEN
+	lda #$00
+	sta __file_eof
+	bcs @error 	; if carry set, the file could not be opened
+	ldx #$02
+	jmp $ffc6     ; CHKIN (lf now used as input)
+@error: inc $900f
+	jmp *-3
+.endproc
+
+;--------------------------------------
+; loadto loads the filename in (YX) (of the length given in .A) to the address
+; in zp::tmp0.
+.export __file_loadto
+.proc __file_loadto
+@dst=zp::tmp0
+	jsr fsetup
+	jsr __file_open
+	ldx __file_loadaddr
+	ldy __file_loadaddr+1
+	stx @dst
+	sty @dst+1
+@l0:    jsr __file_loadb
+	ldx __file_eof
+	bne @done
+	ldy #$00
+	sta (@dst),y
+	incw @dst
+	bne @l0
+@err:	sei
+	inc $900f
+	jmp *-3
+@done:  rts
+.endproc
+
+;--------------------------------------
+; loadb loads the next byte from the last "loaded" file.
+; returns 0 in .A if EOF
+.export __file_loadb
+.proc __file_loadb
+	sty @savey
+	stx @savex
+ 	jsr $ffb7     ; call READST (read status byte)
+	cmp #$00
+	bne @eof      ; either EOF or read error
+	jsr $ffcf     ; call CHRIN (get a byte from file)
+	jmp @done
+
+@eof:   and #$40      ; end of file?
+	beq @error
+@close:
+	inc __file_eof
+	lda __file_lf
+	jsr $ffc3     ; call CLOSE
+	jsr $ffcc     ; call CLRCHN
+	lda #$00
+@done:
+@savey=*+1
+	ldy #$00
+@savex=*+1
+	ldx #$00
+	rts
+@error:
+	sei
+	inc $900f
+	jmp *-3
+.endproc
 
 ;--------------------------------------
 .proc fsetup
@@ -28,13 +110,20 @@ setup:
 :	jsr $ffbd	; SETNAM
 
 	ldx #DEVICE
-	ldy #$01
+	ldy #SA
+	lda #2	; file # 2
 	jmp $ffba	; SETLFS
 .endproc
 
 ;--------------------------------------
-.proc close
-	lda #$0f
+.export __file_close
+.proc __file_close
+	lda #$00
+	jsr $ffc3
+	lda #$01
+	jsr $ffc3
+	lda #$02
+	jsr $ffc3
 	jmp $ffcc
 .endproc
 
@@ -46,73 +135,7 @@ setup:
 
 	lda #$00
 	jsr $ffd5	; LOAD
-	jmp close
-.endproc
-
-;--------------------------------------
-; loadsec loads the sector whose # is given in (YX)
-; the offset to load is given in .A
-.export __file_loadsec
-.proc __file_loadsec
-@dst=zp::tmp0
-	stx @sec
-	sty @sec+1
-	sta @track
-	; open channel file
-	lda #@namelen
-	ldx #<@name
-	ldy #>@name
-	jsr $ffbd 	; SETNAM
-	lda #$02
-	ldx #DEVICE	; device 8
-	ldy #$02	; secondary addr
-	jsr $ffba 	; SETLFS
-	jsr $ffc0 	; OPEN
-	bcs @err
-
-	; open command channel
-	lda #@cmdlen
-	ldx #<@cmd
-	ldy #>@cmd
-	jsr $ffbd
-	lda #$0f	; file #15
-	ldx #DEVICE
-	ldy #$0f	; secondary addr
-	jsr $ffba 	; SETLFS
-	jsr $ffc0	; OPEN command channel
-	bcs @err
-
-	ldx #$02
-	jsr $ffc6	; CHKIN- use file #2 as input
-
-	ldx __file_loadaddr
-	ldy __file_loadaddr+1
-	stx @dst
-	sty @dst+1
-
-	ldy #$00
-@l0:	jsr $ffcf	; CHRIN- get byte
-	sta (zp::tmp0),y
-	iny
-	bne @l0
-
-	lda #$0f
-	jsr $ffc3	; CLOSE channel file
-	lda #$02
-	jsr $ffc3	; CLOSE command channel
-	jmp $ffcc	; CLRCHN
-
-@err:	rts
-
-@name: .byte '#'
-@namelen=*-@name
-
-@cmd: .byte "u1 2 0 "
-@cmdlen=*-@cmd
-
-@sec: .byte 0,0," "
-@track: .byte 0,0,0
-@cmdsize=*-@cmd
+	jmp __file_close
 .endproc
 
 ;--------------------------------------

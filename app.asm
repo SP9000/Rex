@@ -6,6 +6,20 @@
 ;--------------------------------------
 .export __app_movecur
 .proc __app_movecur
+	txa
+	pha
+	tya
+	pha
+
+        ldx __app_cursor
+        ldy __app_cursor+1
+	jsr sprite::off
+
+	pla
+	tay
+	pla
+	tax
+
 	lda __app_cursor
 	sta zp::tmp0
 	lda __app_cursor+1
@@ -15,19 +29,31 @@
 	ldy #Sprite::ypos
 	clc
 	adc (zp::tmp0),y
+	cmp #192-8
+	bcs @movex
 	sta (zp::tmp0),y
 
+@movex:
 	txa
 	dey
 	clc
 	adc (zp::tmp0),y
+	cmp #160-8
+	bcs @done
 	sta (zp::tmp0),y
+@done:
+        ldx __app_cursor
+        ldy __app_cursor+1
+	jsr sprite::on
 	rts
 .endproc
 
 ;--------------------------------------
 .export __app_togglecur
 .proc __app_togglecur
+        ldx __app_cursor
+        ldy __app_cursor+1
+	jsr sprite::off
 	ldx gfx::cursorsprite+Sprite::data
 	ldy gfx::cursorsprite+Sprite::data+1
 	cpx #<gfx::cursor
@@ -46,6 +72,9 @@
 
 @set:	stx gfx::cursorsprite+Sprite::data
 	sty gfx::cursorsprite+Sprite::data+1
+        ldx __app_cursor
+        ldy __app_cursor+1
+	jsr sprite::on
 	rts
 .endproc
 

@@ -40,8 +40,8 @@ enter:
 	sty file::name+1
 	jsr file::load
 
-	ldx #<room1
 	ldy #>room1
+	ldx #<room1
 	stx file::name
 	sty file::name+1
 	jsr room::load
@@ -55,16 +55,9 @@ main:
         cmp $9004
         bne *-3
 
-        ldx app::cursor
-        ldy app::cursor+1
-        jsr sprite::off
-
 	jsr key::handle
         jsr joy::handle
 
-        ldx app::cursor
-        ldy app::cursor+1
-        jsr sprite::on
         jmp main
 
 irq_handler:
@@ -77,6 +70,5 @@ overlayfileend:
 
 room1:
 	.byt room1end - room1 - 1
-room1:
-	.byt "room.prg"
+	.byt "room.seq"
 room1end:
