@@ -71,38 +71,9 @@ COLMEM_ADDR = $9400
         lda __bm_columns+1,x
         sta zp::tmp0+1
 @xtab_off=*+1
-        lda pixel_table
+	lda __bm_pixeltable
         and (zp::tmp0),y
         sta (zp::tmp0),y
-        rts
-.endproc
-
-;--------------------------------------
-.export __bm_restorerow
-.proc __bm_restorerow
-        txa
-	;pha
-        lsr
-        lsr
-        lsr
-	asl
-        tax
-	lda roombuff_columns,x
-        sta zp::tmp0
-	lda roombuff_columns+1,x
-        sta zp::tmp0+1
-        lda __bm_columns+4*2,x
-	adc #16
-        sta zp::tmp2
-	lda __bm_columns+4*2+1,x
-	adc #0
-        sta zp::tmp2+1
-	;pla
-        ;and #$07
-	;tax
-	;lda pixel_table,x
-	lda (zp::tmp0),y
-        sta (zp::tmp2),y
         rts
 .endproc
 
@@ -123,7 +94,7 @@ COLMEM_ADDR = $9400
 	pla
         and #$07
 	tax
-	lda pixel_table,x
+	lda __bm_pixeltable,x
         ora (zp::tmp0),y
         sta (zp::tmp0),y
         rts
@@ -134,7 +105,7 @@ COLMEM_ADDR = $9400
         txa
         and #$07
         sta @xtab_off
-        lda pixel_table,x
+	lda __bm_pixeltable,x
         pha
         txa
         lsr
@@ -143,44 +114,10 @@ COLMEM_ADDR = $9400
         lda __bm_columns+1,x
         sta zp::tmp0+1
 @xtab_off=*+1
-        lda pixel_table
+	lda __bm_pixeltable
         eor (zp::tmp0),y
         sta (zp::tmp0),y
         rts
-.endproc
-
-
-;--------------------------------------
-.export __bm_hline
-.proc __bm_hline
-@x0 = zp::arg0
-@x1 = zp::arg1
-@y = zp::arg2
-@l0:	ldx @x0
-	ldy @y
-	jsr __bm_setpixel
-	inc @x0
-	lda @x0
-	cmp @x1
-	bne @l0
-
-	rts
-.endproc
-
-;--------------------------------------
-.export __bm_restorehline
-.proc __bm_restorehline
-@x0 = zp::arg0
-@x1 = zp::arg1
-@y = zp::arg2
-@l0:	ldx @x0
-	ldy @y
-	jsr __bm_restorerow
-	inc @x0
-	lda @x0
-	cmp @x1
-	bne @l0
-	rts
 .endproc
 
 ;--------------------------------------
@@ -209,26 +146,12 @@ COLMEM_ADDR = $9400
 ;these tables are aligned so that it can be effeciently accessed
 ;TODO: lots of free room between them
 .align 256
-pixel_table:
+.export __bm_pixeltable
+__bm_pixeltable:
 .byte $80,$40,$20,$10,$08,$04,$02,$01
 .align 256
-pixel_table_inverted:
+__pixel_table_inverted:
 .byte $7f,$bf,$df,$ef,$f7,$fb,$fd,$fe
-
-roombuff_columns:
-.word mem::roombuff
-.word mem::roombuff+112
-.word mem::roombuff+112*2
-.word mem::roombuff+112*3
-.word mem::roombuff+112*4
-.word mem::roombuff+112*5
-.word mem::roombuff+112*6
-.word mem::roombuff+112*7
-.word mem::roombuff+112*8
-.word mem::roombuff+112*9
-.word mem::roombuff+112*10
-.word mem::roombuff+112*11
-.word mem::roombuff+112*12
 
 .export __bm_columns
 __bm_columns:

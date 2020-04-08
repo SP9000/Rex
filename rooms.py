@@ -1,3 +1,5 @@
+from PIL import Image
+
 #######################################
 # Things
 class Thing:
@@ -21,22 +23,41 @@ class Thing:
         out.write(bytes(outbuff))
 
     def writePic(out):
-        with open(self.pic, "rb") as f:
-            f.read(2)
+        if self.pic.endswith(".prg"):
+            with open(self.pic, "rb") as f:
+                f.read(2)
 
-            outbuff = bytearray()
-
-            # read the pixel data
-            for x in range(0, self.width):
-                for b in f.read(self.height):
-                    outbuff.append(b)
-                f.read(192 - self.height)
-            # read the alpha channel
-            for x in range(0, self.width):
-                for b in f.read(self.height):
-                    outbuff.append(b)
-                f.read(192 - self.height)
-            out.write(bytes(outbuff))
+                outbuff = bytearray()
+                # read the pixel data
+                for x in range(0, self.width):
+                    for b in f.read(self.height):
+                        outbuff.append(b)
+                    f.read(192 - self.height)
+                # read the alpha channel
+                for x in range(0, self.width):
+                    for b in f.read(self.height):
+                        outbuff.append(b)
+                    f.read(192 - self.height)
+                out.write(bytes(outbuff))
+        else:
+            img = Image.open(self.pic)
+            pixels = im.load()
+            width, height = img.size
+            pixmap = bytearray()
+            alphamap = bytearray()
+            for x in range(0, width/8):
+                for y in range(0, height):
+                    alpha = 0
+                    pix = 0
+                    for px in range(0, 8):
+                        p = (1, 0) [pixels[x+px, y+py].r = 0] # 1 if black
+                        a = (1, 0) [pixels[x+px, y+py].a > 0] # 1 if not-trans
+                        pix = pix | (p << (7-px))
+                        alpha = alpha | (a << (7-py))
+                    alphamap.append(alpha)
+                    pixmap.append(pix)
+            out.write(bytes(pixmap))
+            out.write(bytes(alphamap))
 
     def writeHandler(out):
         with open(self.handler, "rb") as binfile:
@@ -70,18 +91,38 @@ class Room:
         self.things = []
 
     def writePic(out):
-        # write picture data (12x112 bytes)
-        with open(self.pic, "rb") as f:
-            f.read(2)
+        outbuff = bytearray()
+        outbuff.append(0x00) 
+        outbuff.append(0x60)
 
-            outbuff = bytearray()
-            outbuff.append(0x00) 
-            outbuff.append(0x60)
-            for x in range(0, 96/8):
-                for b in f.read(112):
-                    outbuff.append(b)
-                f.read(192-112)
-            out.write(bytes(outbuff))
+        # write picture data (12x112 bytes)
+        if self.pic.endswith(".prg"):
+            img = Image.new('RGB', 96, 112), color = 'white')
+            pixels = img.load()
+            with open(self.pic, "rb") as f:
+                f.read(2)
+                for x in range(0, 96/8):
+                    for b in f.read(112):
+                        outbuff.append(b)
+                        for i in range(0,8):
+                            p = (rgb(255,255,255), rgb(0,0,0)) [(b & (i << 7) != 0]
+                            pixels[112*x + i] = p
+                    f.read(192-112)
+            # export a PNG of the file
+            img.save(self.pic[:-4])
+
+        else:
+            img = Image.open(self.pic)
+            pixels = im.load()
+            width, height = img.size
+            for x in range(0, width/8):
+                for y in range(0, height):
+                    pix = 0
+                    for px in range(0, 8):
+                        color = (1, 0) [pixels[x+px, y+py].r = 0] # 1 if black
+                        pix = pix | (color << (7-px))
+                    outbuff.append(pix)
+        out.write(outbuff)
 
     def writeExit(out, exitFile):
         # write length-prefixed file of exit
@@ -94,11 +135,11 @@ class Room:
         for c in exitFile:
             outbuff.append(c)
 
-    def write(buf):
+    def write():
         # export the picture
         out = open(self.exportAs, "wb")
         handlerBin=bytearray(list(f.read()))
-        buf.writePic(out)
+        out.writePic(out)
 
         # write the exits
         self.writeExit(out, exits.get("N"))
@@ -114,7 +155,7 @@ class Room:
 
         # export the things
         for t in things:
-            t.write(buf)
+            t.write(out)
         print("exported {}".format(self.exportAs))
 
 class Tunnel(Room):
@@ -124,6 +165,9 @@ class Tunnel(Room):
         self.exportAs = "tunnel.seq"
         self.name = "tunnel"
         self.description = "a long wide tunnel stretches out ahead"
-        self.exits = {
-                "N": "garden.seq"
-        }
+        self.exits = {}
+
+rooms = [Tunnel()]
+
+for r in rooms:
+    room.write()
