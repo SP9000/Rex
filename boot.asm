@@ -51,13 +51,12 @@ enter:
 	ldy app::cursor+1
 	jsr sprite::on
 main:
-        lda #$05
+        lda #$70
         cmp $9004
         bne *-3
 
 	jsr key::handle
         jsr joy::handle
-
         jmp main
 
 irq_handler:

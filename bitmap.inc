@@ -23,6 +23,10 @@
 ;contains the address of each column within the bitmap
 .import __bm_columns
 
+.import __bm_hline
+.import __bm_restorerow
+.import __bm_restorehline
+
 .scope bm
         init        = __bm_init
         clr         = __bm_clr
@@ -30,5 +34,8 @@
         clrpixel    = __bm_clrpixel
         togglepixel = __bm_togglepixel
         columns     = __bm_columns
+	hline       = __bm_hline
+	restorerow  = __bm_restorerow
+	restorehline = __bm_restorehline
 .endscope
 

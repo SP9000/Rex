@@ -12,22 +12,70 @@
 ROOM_WIDTH = 96/8
 ROOM_HEIGHT = 112
 
-MAX_EXITS = 5
-MAX_DOORS = 8
 MAX_THINGS = 8
+NUM_EXITS=6
 
 ;--------------------------------------
 numrooms: .byt 0
-numexits: .byt 0
-numdoors: .byt 0
+
 
 spritetable: .res MAX_THINGS*2
-postable: .res MAX_THINGS*2
 idstable: .res MAX_THINGS*2
 nametable: .res MAX_THINGS*2
 desctable: .res MAX_THINGS*2
 usetable: .res MAX_THINGS*2
 numthings: .byte 0
+
+name: .res 40
+description: .res 512
+
+; the addresses for room names for N,S,E,W,U,D
+exits: .res 2*6
+
+;--------------------------------------
+; addthing adds the thing in (YX) to the room
+; 0-1 sprite address
+; 2-3 name address
+; 4-5 description address
+; 6-7 handler (use) address
+.proc __room_addthing
+@t=zp::tmp0
+	stx @t
+	sty @t+1
+
+	lda numthings
+	asl
+	tax
+
+	ldy #$00
+	lda (@t),y
+	sta spritetable,x
+	iny
+	lda (@t),y
+	sta spritetable+1,x
+
+	iny
+	lda (@t),y
+	sta nametable,x
+	iny
+	lda (@t),y
+	sta nametable+1,x
+
+	iny
+	lda (@t),y
+	sta desctable,x
+	iny
+	lda (@t),y
+	sta desctable+1,x
+
+	iny
+	lda (@t),y
+	sta usetable,x
+	iny
+	lda (@t),y
+	sta usetable+1,x
+	rts
+.endproc
 
 ;--------------------------------------
 ; gethandle returns the room handle for the thing of the ID given in (YX)
@@ -93,25 +141,32 @@ numthings: .byte 0
 ;load loads the room data for the room name in (YX)
 ; format of room file:
 ; - picdata
+; - exits (1 byte ID of rooms):
+;   North
+;   South
+;   West
+;   East
+;   Up
+;   Down
+; - things table
 ; - room-description
-; - exits
-; - doors
+; things data
 .export __room_load
 .proc __room_load
 @room = zp::tmp0
 @src = zp::tmp0
 @dst = zp::tmp2
 @t = zp::tmp4
-@desc = mem::spare + (ROOM_WIDTH*ROOM_HEIGHT)
-	lda #<mem::spare
+@desc = mem::roombuff + (ROOM_WIDTH*ROOM_HEIGHT)
+	lda #<mem::roombuff
 	sta file::loadaddr
-	lda #>mem::spare
+	lda #>mem::roombuff
 	sta file::loadaddr+1
-	jsr file::loadto ; load into spare memory
+	jsr file::loadto ; load into room buffer
 
 	; load the room image data
-	ldx #<mem::spare
-	ldy #>mem::spare
+	ldx #<mem::roombuff
+	ldy #>mem::roombuff
 	stx @src
 	sty @src+1
 	ldx #<($1100 + ($c0*4) + 16)
@@ -142,32 +197,57 @@ numthings: .byte 0
 :	sta @dst
 	dex
 	bne @l1
+
 	rts
 
-	; get the room description
-@l2:	iny
+	; get the exits (len-prefixed)
+	ldx #NUM_EXITS-1
+	ldy #$00
+@exits: lda @src
+	sta exits,x
+	lda @src+1
+	sta exits+1,x
 	lda (@src),y
-	sta (@dst),y
-	bne @l2
-	tya
 	clc
 	adc @src
-	sta @src+1
+	sta @src
 	bcc :+
 	inc @src+1
-:	tya
-	adc @dst
-	sta @dst+1
-	bcc :+
-	inc @dst+1
+:	inx
+	inx
+	cpx #NUM_EXITS*2
+	bcc @exits
+
+@name:
+	lda @src
+	sta name
+	lda @src+1
+	sta name+1
+	; get the room name
+:	lda (@src),y
+	incw @src
+	cmp #$00
+	bne :-
+
+@description:
+	lda @src
+	sta description
+	lda @src+1
+	sta description+1
+	; get the room description
+:	lda (@src),y
+	incw @src
+	cmp #$00
+	bne :-
 
 	; get the things in the room
 	; TODO
+@things:
 
 @done:
 	; write the room's description
-	ldx #<@desc
-	ldy #>@desc
+	ldx description
+	ldy description
 	jsr gui::txt
 	rts
 .endproc
@@ -229,10 +309,13 @@ __room_look:
 	; get the thing's positon
 :	asl
 	tay
-	lda postable,x
-	sta @xpos
-	lda postable+1,x
-	sta @ypos
+	lda spritetable+1,x
+	tay
+	lda spritetable,x
+	tax
+	jsr sprite::pos
+	stx @xpos
+	sty @ypos
 
 	; get the thing's dimensions and compute bounds of its rect
 	lda @i
@@ -277,4 +360,41 @@ __room_look:
 	cmp numthings
 	bcc @l0
 	rts
+.endproc
+
+;--------------------------------------
+.proc __room_north
+	ldx #$00
+	.byte $2c
+.endproc
+;--------------------------------------
+.proc __room_south
+	ldx #$02
+	.byte $2c
+.endproc
+;--------------------------------------
+.proc __room_east
+	ldx #$04
+	.byte $2c
+.endproc
+;--------------------------------------
+.proc __room_west
+	ldx #$06
+	.byte $2c
+.endproc
+;--------------------------------------
+.proc __room_up
+	ldx #$08
+	.byte $2c
+.endproc
+;--------------------------------------
+.proc __room_down
+	ldx #$0a
+	lda exits+1,x
+	beq @done
+	tay
+	lda exits,x
+	tax
+	jsr __room_load
+@done:	rts
 .endproc

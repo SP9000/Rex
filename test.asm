@@ -15,7 +15,7 @@
 	jsr gui::txt
 	ldx #<rock
 	ldy #>rock
-	;jsr thing::add
+	;jsr room::add
 	ldx #<rock
 	ldy #>rock
 	jsr inv::add

@@ -6,20 +6,6 @@
 ;--------------------------------------
 .export __app_movecur
 .proc __app_movecur
-	txa
-	pha
-	tya
-	pha
-
-        ldx __app_cursor
-        ldy __app_cursor+1
-	jsr sprite::off
-
-	pla
-	tay
-	pla
-	tax
-
 	lda __app_cursor
 	sta zp::tmp0
 	lda __app_cursor+1
@@ -32,7 +18,6 @@
 	cmp #192-8
 	bcs @movex
 	sta (zp::tmp0),y
-
 @movex:
 	txa
 	dey
@@ -41,11 +26,7 @@
 	cmp #160-8
 	bcs @done
 	sta (zp::tmp0),y
-@done:
-        ldx __app_cursor
-        ldy __app_cursor+1
-	jsr sprite::on
-	rts
+@done:	rts
 .endproc
 
 ;--------------------------------------
