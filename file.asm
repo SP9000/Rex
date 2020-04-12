@@ -29,6 +29,7 @@ SA=2
 .export __file_open
 .proc __file_open
 	jsr $ffc0 	; call OPEN
+	bcs @error
 	lda #$00
 	sta __file_eof
 	bcs @error 	; if carry set, the file could not be opened
@@ -50,16 +51,17 @@ SA=2
 	ldy __file_loadaddr+1
 	stx @dst
 	sty @dst+1
+	lda #$00
+	sta __file_eof
 @l0:    jsr __file_loadb
 	ldx __file_eof
 	bne @done
 	ldy #$00
 	sta (@dst),y
 	incw @dst
-	bne @l0
+	jmp @l0
 @err:	sei
 	inc $900f
-	jmp *-3
 @done:  rts
 .endproc
 
@@ -68,27 +70,19 @@ SA=2
 ; returns 0 in .A if EOF
 .export __file_loadb
 .proc __file_loadb
-	sty @savey
-	stx @savex
  	jsr $ffb7     ; call READST (read status byte)
 	cmp #$00
 	bne @eof      ; either EOF or read error
-	jsr $ffcf     ; call CHRIN (get a byte from file)
-	jmp @done
+	jmp $ffcf     ; call CHRIN (get a byte from file)
 
 @eof:   and #$40      ; end of file?
 	beq @error
 @close:
 	inc __file_eof
-	lda __file_lf
+	lda #2
 	jsr $ffc3     ; call CLOSE
 	jsr $ffcc     ; call CLRCHN
 	lda #$00
-@done:
-@savey=*+1
-	ldy #$00
-@savex=*+1
-	ldx #$00
 	rts
 @error:
 	sei
@@ -100,7 +94,6 @@ SA=2
 .proc fsetup
 	ldx __file_name
 	ldy __file_name+1
-setup:
 	stx @0+1
 	sty @0+2
 @0:	lda $ffff
@@ -111,7 +104,7 @@ setup:
 
 	ldx #DEVICE
 	ldy #SA
-	lda #2	; file # 2
+	lda #2		; file # 2
 	jmp $ffba	; SETLFS
 .endproc
 
@@ -131,11 +124,20 @@ setup:
 ; load loads the file in (name).
 .export __file_load
 .proc __file_load
-	jsr fsetup
-
-	lda #$00
-	jsr $ffd5	; LOAD
-	jmp __file_close
+	jsr $ffbd     ; call SETNAM
+	lda #$01
+	ldx $ba       ; last used device number
+	bne :+
+	ldx #$08      ; default to device 8
+:	ldy #$01      ; not $01 means: load to address stored in file
+	jsr $ffba     ; call SETLFS
+	lda #$00      ; $00 means: load to memory (not verify)
+	jsr $ffd5     ; call LOAD
+	bcs @error    ; if carry set, a load error has happened
+	rts
+@error:
+	inc $900f
+	jmp @error
 .endproc
 
 ;--------------------------------------

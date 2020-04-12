@@ -36,8 +36,7 @@ enter:
 
 	ldy #>overlayfile
 	ldx #<overlayfile
-	stx file::name
-	sty file::name+1
+	lda #overlaylen
 	jsr file::load
 
 	ldy #>room1
@@ -45,11 +44,9 @@ enter:
 	stx file::name
 	sty file::name+1
 	jsr room::load
+	jsr room::update
 
 	jsr test
-	ldx app::cursor
-	ldy app::cursor+1
-	jsr sprite::on
 main:
         lda #$70
         cmp $9004
@@ -63,11 +60,15 @@ irq_handler:
         jmp $eabf
 
 overlayfile:
-	.byt overlayfileend - overlayfile - 1
 	.byt "overlay.prg"
 overlayfileend:
+overlaylen = overlayfileend - overlayfile
 
 room1:
 	.byt room1end - room1 - 1
-	.byt "room.seq"
+	.byt "gazebo.prg"
 room1end:
+room2:
+	.byt room2end - room2 - 1
+	.byt "garden.prg"
+room2end:

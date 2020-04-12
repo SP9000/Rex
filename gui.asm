@@ -1,5 +1,7 @@
 .include "bitmap.inc"
 .include "inventory.inc"
+.include "macros.inc"
+.include "memory.inc"
 .include "math.inc"
 .include "sprite.inc"
 .include "text.inc"
@@ -9,10 +11,10 @@
 .CODE
 
 ; the bounds of the text area
-TXT_ROW_START = 20
-TXT_ROW_STOP  = 22
+TXT_ROW_START = 18
+TXT_ROW_STOP  = 24
 TXT_COL_START = 2
-TXT_COL_STOP  = 18
+TXT_COL_STOP  = 16*2
 
 ; the bounds of the inventory area
 INV_XSTART = 4
@@ -73,9 +75,18 @@ console: .byte 0,16,16,4
 	iny
 	cpy #TXT_COL_STOP-TXT_COL_START
 	bcc @l1
+
+	; go back to the last word that fits on the row
+@chk:	lda (@msg),y
+	cmp #' '
+	beq @draw
+	dey
+	bpl @chk
+
 	.byte $2c ;skw
 @end:   inc @done
-@draw:	sty text::len
+@draw:
+	sty text::len
 	ldx @msg
 	ldy @msg+1
 	lda @row
@@ -88,7 +99,16 @@ console: .byte 0,16,16,4
 	bcc :+
 	inc @msg+1
 
-:	lda @done
+:	ldy #$00
+@skipspaces:
+	lda (@msg),y
+	cmp #' '
+	bne @nextrow
+	incw @msg
+	jmp @skipspaces
+
+@nextrow:
+	lda @done
 	bne @0
 	inc @row
 	lda @row
@@ -155,6 +175,35 @@ console: .byte 0,16,16,4
 	cmp #INV_YSTOP
 	bcc @0
 
+	rts
+.endproc
+
+;--------------------------------------
+; clrtxt clears the text display area
+.export __gui_clrtxt
+.proc __gui_clrtxt
+@row=zp::tmp0
+	lda #' '
+	ldx #TXT_COL_STOP-TXT_COL_START
+@l0:	sta mem::spare,x
+	dex
+	bpl @l0
+
+	lda #TXT_COL_STOP-TXT_COL_START
+	sta text::len
+	lda #TXT_COL_START
+	sta text::colstart
+
+	lda #TXT_ROW_START
+	sta @row
+@l1:	lda @row
+	ldx #<mem::spare
+	ldy #>mem::spare
+	jsr text::puts
+	inc @row
+	lda @row
+	cmp #TXT_ROW_STOP
+	bcc @l1
 	rts
 .endproc
 

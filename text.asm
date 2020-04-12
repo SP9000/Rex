@@ -5,6 +5,10 @@
 
 ESCAPE_CHARACTER = $ff
 
+.export __text_speed
+__text_speed:
+.byte 0
+
 ;--------------------------------------
 .export __text_print
 .proc __text_print
@@ -29,6 +33,18 @@ ESCAPE_CHARACTER = $ff
         pla
         jsr __text_puts
         rts
+.endproc
+
+;--------------------------------------
+.proc delay
+	ldx __text_speed
+	beq @done
+	lda #$20
+:	cmp $9004
+	bne :-
+	dex
+	bpl :-
+@done:	rts
 .endproc
 
 ;--------------------------------------
@@ -59,7 +75,11 @@ __text_colstart=*+1
         sta txtdst+1
 
         ldy #$00
-l0:     lda (txtsrc),y
+l0:
+	jsr delay
+
+@delaydone:
+	lda (txtsrc),y
         iny
         sta txtleft
         lda #$00
@@ -79,7 +99,15 @@ l0:     lda (txtsrc),y
         sta txtleft+1
         lda (txtsrc),y
         iny
-        sta txtright
+	cpy __text_len
+	bcc :+
+	pha
+	lda __text_len
+	lsr
+	pla
+	bcc :+	 ; length is even
+	lda #' ' ; length is odd, pad last char with a space
+:	sta txtright
         lda #$00
         asl txtright
         rol
@@ -95,7 +123,7 @@ l0:     lda (txtsrc),y
         lda txtright+1
         adc #<((__text_charmap-256) / 256)
         sta txtright+1
-        tya
+@put:	tya
         pha
         ldy #$00
 l1:     lda (txtleft),y

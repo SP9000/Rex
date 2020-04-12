@@ -3,7 +3,7 @@
 .include "zeropage.inc"
 
 .export __pen_stroke
-__pen_stroke: .byte 0
+__pen_stroke: .byte 1
 
 ;--------------------------------------
 .export __pen_restorerow
@@ -46,6 +46,22 @@ __pen_stroke: .byte 0
 .endproc
 
 ;--------------------------------------
+.export __pen_vline
+.proc __pen_vline
+@y0 = zp::arg0
+@y1 = zp::arg1
+@x = zp::arg2
+@l0:	ldx @x
+	ldy @y0
+	jsr bm::setpixel
+	inc @y0
+	lda @y0
+	cmp @y1
+	bne @l0
+	rts
+.endproc
+
+;--------------------------------------
 .export __pen_restorehline
 .proc __pen_restorehline
 @x0 = zp::arg0
@@ -61,6 +77,7 @@ __pen_stroke: .byte 0
 	rts
 .endproc
 
+;--------------------------------------
 roombuff_columns:
 .word mem::roombuff
 .word mem::roombuff+112

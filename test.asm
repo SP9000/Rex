@@ -10,9 +10,6 @@
 
 .export test
 .proc test
-	ldx #<testmsg
-	ldy #>testmsg
-	jsr gui::txt
 	ldx #<rock
 	ldy #>rock
 	;jsr room::add
@@ -22,7 +19,7 @@
 	ldx #<rock
 	ldy #>rock
 	jsr inv::add
-	jsr gui::drawinv
+	;jsr gui::drawinv
 	rts
 .endproc
 

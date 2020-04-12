@@ -1,10 +1,12 @@
 .include "app.inc"
 .include "file.inc"
+.include "fx.inc"
 .include "gui.inc"
 .include "macros.inc"
 .include "math.inc"
 .include "memory.inc"
 .include "sprite.inc"
+.include "text.inc"
 .include "types.inc"
 .include "zeropage.inc"
 .CODE
@@ -26,8 +28,8 @@ desctable: .res MAX_THINGS*2
 usetable: .res MAX_THINGS*2
 numthings: .byte 0
 
-name: .res 40
-description: .res 512
+name: .word 0
+description: .word 0
 
 ; the addresses for room names for N,S,E,W,U,D
 exits: .res 2*6
@@ -138,6 +140,21 @@ exits: .res 2*6
 .endproc
 
 ;--------------------------------------
+; loads a filename from the given length prefixed string
+.proc load_lpstr
+	stx $f0
+	sty $f1
+	ldy #$00
+	lda ($f0),y
+	ldx $f0
+	inx
+	bne :+
+	inc $f1
+:	ldy $f1
+	jmp file::load
+.endproc
+
+;--------------------------------------
 ;load loads the room data for the room name in (YX)
 ; format of room file:
 ; - picdata
@@ -153,16 +170,18 @@ exits: .res 2*6
 ; things data
 .export __room_load
 .proc __room_load
-@room = zp::tmp0
-@src = zp::tmp0
-@dst = zp::tmp2
-@t = zp::tmp4
-@desc = mem::roombuff + (ROOM_WIDTH*ROOM_HEIGHT)
-	lda #<mem::roombuff
-	sta file::loadaddr
-	lda #>mem::roombuff
-	sta file::loadaddr+1
-	jsr file::loadto ; load into room buffer
+	jmp load_lpstr
+.endproc
+
+;--------------------------------------
+;update updates tables with the buffered room data
+.export __room_update
+.proc __room_update
+	@room = zp::tmp0
+	@src = zp::tmp0
+	@dst = zp::tmp2
+	@t = zp::tmp4
+	@desc = mem::roombuff + (ROOM_WIDTH*ROOM_HEIGHT)
 
 	; load the room image data
 	ldx #<mem::roombuff
@@ -198,17 +217,19 @@ exits: .res 2*6
 	dex
 	bne @l1
 
-	rts
-
 	; get the exits (len-prefixed)
-	ldx #NUM_EXITS-1
+	ldx #$00
 	ldy #$00
 @exits: lda @src
 	sta exits,x
 	lda @src+1
 	sta exits+1,x
 	lda (@src),y
-	clc
+	bne :+
+	lda #$00
+	sta exits,x
+	sta exits+1,x
+:	sec
 	adc @src
 	sta @src
 	bcc :+
@@ -216,10 +237,9 @@ exits: .res 2*6
 :	inx
 	inx
 	cpx #NUM_EXITS*2
-	bcc @exits
+	bne @exits
 
-@name:
-	lda @src
+@name:	lda @src
 	sta name
 	lda @src+1
 	sta name+1
@@ -245,10 +265,18 @@ exits: .res 2*6
 @things:
 
 @done:
+	jsr gui::clrtxt
+	ldx app::cursor
+	ldy app::cursor+1
+	jsr sprite::on
 	; write the room's description
 	ldx description
-	ldy description
+	ldy description+1
+	lda #20
+	sta text::speed
 	jsr gui::txt
+	lda #0
+	sta text::speed
 	rts
 .endproc
 
@@ -363,21 +391,25 @@ __room_look:
 .endproc
 
 ;--------------------------------------
+.export __room_north
 .proc __room_north
 	ldx #$00
 	.byte $2c
 .endproc
 ;--------------------------------------
+.export __room_south
 .proc __room_south
 	ldx #$02
 	.byte $2c
 .endproc
 ;--------------------------------------
+.export __room_east
 .proc __room_east
 	ldx #$04
 	.byte $2c
 .endproc
 ;--------------------------------------
+.export __room_west
 .proc __room_west
 	ldx #$06
 	.byte $2c
@@ -392,9 +424,16 @@ __room_look:
 	ldx #$0a
 	lda exits+1,x
 	beq @done
-	tay
+	pha
 	lda exits,x
+	pha
+	jsr fx::fadeout
+	pla
 	tax
+	pla
+	tay
 	jsr __room_load
+	jsr fx::fadein
+	jsr __room_update
 @done:	rts
 .endproc

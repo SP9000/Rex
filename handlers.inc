@@ -51,8 +51,6 @@
 .macro on_fire
 .local @do
 .local @done
-	jsr fx::fadeout
-	jsr fx::fadein
 	lda gfx::cursorsprite+Sprite::data
 	cmp #<gfx::eye
 	bne @do

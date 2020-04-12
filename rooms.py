@@ -41,7 +41,7 @@ class Thing:
                 out.write(bytes(outbuff))
         else:
             img = Image.open(self.pic)
-            pixels = im.load()
+            pixels = img.load()
             width, height = img.size
             pixmap = bytearray()
             alphamap = bytearray()
@@ -50,8 +50,8 @@ class Thing:
                     alpha = 0
                     pix = 0
                     for px in range(0, 8):
-                        p = (1, 0) [pixels[x+px, y+py].r = 0] # 1 if black
-                        a = (1, 0) [pixels[x+px, y+py].a > 0] # 1 if not-trans
+                        p = (1, 0)[pixels[x+px, y+py].r == 0] # 1 if black
+                        a = (1, 0)[pixels[x+px, y+py].a > 0] # 1 if not-trans
                         pix = pix | (p << (7-px))
                         alpha = alpha | (a << (7-py))
                     alphamap.append(alpha)
@@ -89,85 +89,141 @@ class Room:
         self.description = ""
         self.exits = {}
         self.things = []
+        self.handler = ""
 
-    def writePic(out):
+    def writePic(self, out):
         outbuff = bytearray()
-        outbuff.append(0x00) 
-        outbuff.append(0x60)
 
         # write picture data (12x112 bytes)
         if self.pic.endswith(".prg"):
-            img = Image.new('RGB', 96, 112), color = 'white')
+            img = Image.new(('RGB'), (96, 112), color = 'white')
             pixels = img.load()
             with open(self.pic, "rb") as f:
                 f.read(2)
-                for x in range(0, 96/8):
+                for x in range(0, int(96/8)):
+                    y = 0
                     for b in f.read(112):
                         outbuff.append(b)
                         for i in range(0,8):
-                            p = (rgb(255,255,255), rgb(0,0,0)) [(b & (i << 7) != 0]
-                            pixels[112*x + i] = p
+                            p = ((255,255,255), (0,0,0))[(b & (1 << (7-i))) != 0]
+                            pixels[8*x + i, y] = p
+                        y = y + 1
                     f.read(192-112)
             # export a PNG of the file
-            img.save(self.pic[:-4])
+            img.save(self.pic[:-4] + ".png")
 
         else:
             img = Image.open(self.pic)
-            pixels = im.load()
+            pixels = img.load()
             width, height = img.size
-            for x in range(0, width/8):
-                for y in range(0, height):
+            for x in range(int(width/8)):
+                for y in range(height):
                     pix = 0
-                    for px in range(0, 8):
-                        color = (1, 0) [pixels[x+px, y+py].r = 0] # 1 if black
+                    for px in range(8):
+                        color = (0, 1)[pixels[x*8+px, y][0] == 0] # 1 if black
                         pix = pix | (color << (7-px))
                     outbuff.append(pix)
         out.write(outbuff)
 
-    def writeExit(out, exitFile):
+    def writeExit(self, out, exitFile):
         # write length-prefixed file of exit
+        outbuff = bytearray()
         if exitFile is None:
             outbuff.append(0x00)
-            outbuff.append(0x00)
-            return
-        length = len(exitFile)
-        outbuff.append(length)
-        for c in exitFile:
-            outbuff.append(c)
+        else:
+            length = len(exitFile)
+            outbuff.append(length)
+            outbuff.extend(map(ord, exitFile))
+        out.write(outbuff)
 
-    def write():
+    def writeHandler(self, out):
+        if self.handler == "":
+            outbuff = bytearray()
+            outbuff.append(0x00)
+            outbuff.append(0x00)
+            out.write(outbuff)
+            return
+        with open(self.handler, "rb") as binfile:
+            handler = bytearray(binfile.read())
+            out.write(handler)
+
+    def write(self):
         # export the picture
         out = open(self.exportAs, "wb")
-        handlerBin=bytearray(list(f.read()))
-        out.writePic(out)
+
+        loadAddr = bytearray()
+        loadAddr.append(0x00)
+        loadAddr.append(0x60)
+        out.write(loadAddr)
+        self.writePic(out)
 
         # write the exits
-        self.writeExit(out, exits.get("N"))
-        self.writeExit(out, exits.get("S"))
-        self.writeExit(out, exits.get("E"))
-        self.writeExit(out, exits.get("W"))
-        self.writeExit(out, exits.get("D"))
-        self.writeExit(out, exits.det("U"))
+        self.writeExit(out, self.exits.get("N"))
+        self.writeExit(out, self.exits.get("S"))
+        self.writeExit(out, self.exits.get("E"))
+        self.writeExit(out, self.exits.get("W"))
+        self.writeExit(out, self.exits.get("D"))
+        self.writeExit(out, self.exits.get("U"))
         
         # write the name & description (0-terminated)
-        out.write(name)
-        out.write(description)
+        strings = bytearray()
+        strings.extend(map(ord, self.name))
+        strings.append(0x00)
+        strings.extend(map(ord, self.description))
+        strings.append(0x00)
+        out.write(strings)
 
         # export the things
-        for t in things:
+        for t in self.things:
             t.write(out)
+
+        self.writeHandler(out)
+
         print("exported {}".format(self.exportAs))
 
 class Tunnel(Room):
     def __init__(self):
         super().__init__()
-        self.pic = "tunnel.prg"
-        self.exportAs = "tunnel.seq"
+        self.pic = "rooms/tunnel.png"
+        self.exportAs = "tunnel.prg"
         self.name = "tunnel"
         self.description = "a long wide tunnel stretches out ahead"
         self.exits = {}
 
-rooms = [Tunnel()]
+class Garden(Room):
+    def __init__(self):
+        super().__init__()
+        self.pic = "exports/garden.png"
+        self.exportAs = "garden.prg"
+        self.name = "garden"
+        self.description = "a chilly lawn stretches before you. an old gazebo to the north creaks in the wind and the silhouette of an ancient cemetery in the east."
+        self.exits = {
+                "N": "GAZEBO.PRG",
+                "E": "CEMETERY.PRG"
+        }
+
+class Gazebo(Room):
+    def __init__(self):
+        super().__init__()
+        self.pic = "exports/gazebo.png"
+        self.exportAs = "gazebo.prg"
+        self.name = "gazebo"
+        self.description = "the gazebo is in relatively good shape. it seems newly built compared to the other worn remains that dot the garden."
+        self.exits = {"S": "GARDEN.PRG"}
+
+class Cemetery(Room):
+    def __init__(self):
+        super().__init__()
+        self.pic = "exports/cemetery.png"
+        self.exportAs = "cemetery.prg"
+        self.name = "cemetery"
+        self.description = "the still cemetery air feels cold. you suppose that this was some royal family based on the small number of graves, but their inscriptions are illegible."
+        self.exits = {"W": "GARDEN.PRG"}
+
+rooms = [Garden(),
+        Cemetery(),
+        Gazebo(),
+        Tunnel()]
 
 for r in rooms:
-    room.write()
+    r.write()
