@@ -1,6 +1,7 @@
 .import __text_len
 .import __text_colstart
 .import __text_puts
+.import __text_print
 .import __text_charmap
 .import __text_speed
 
@@ -8,6 +9,7 @@
         len      = __text_len
         colstart = __text_colstart
         puts     = __text_puts
+	print    = __text_print
         charmap  = __text_charmap
 	speed    = __text_speed
 .endscope

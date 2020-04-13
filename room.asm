@@ -269,6 +269,12 @@ exits: .res 2*6
 	ldx app::cursor
 	ldy app::cursor+1
 	jsr sprite::on
+
+	; write the room name
+	ldx name
+	ldy name+1
+	jsr gui::name
+
 	; write the room's description
 	ldx description
 	ldy description+1

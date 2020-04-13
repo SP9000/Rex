@@ -14,13 +14,18 @@
 TXT_ROW_START = 18
 TXT_ROW_STOP  = 24
 TXT_COL_START = 2
-TXT_COL_STOP  = 16*2
+TXT_COL_STOP  = 17*2
+
+NAME_ROW =  16
+NAME_COL =  4
+NAME_COL_STOP =  20
 
 ; the bounds of the inventory area
-INV_XSTART = 4
-INV_XSTOP  = 24
-INV_YSTART = 14
-INV_YSTOP = 96
+INV_COL_START = 2
+INV_COL_STOP  = 17*2
+INV_ROW_START = 18
+INV_ROW_STOP = 24
+INV_NUM_COLS = (INV_COL_STOP / 16)
 
 ; bounds of scrolldown button
 SCROLLDOWN_X = 152
@@ -33,6 +38,7 @@ SCROLLUP_X = 152
 SCROLLUP_Y = 20
 SCROLLUP_W = 8
 SCROLLUP_H = 8
+
 
 txtscroll: .byte 0 ;# of characters the text area is scrolled
 invscroll: .byte 0 ;# of pixels the inventory is scrolled
@@ -47,6 +53,38 @@ console: .byte 0,16,16,4
 .export __onfire
 .proc __onfire
 
+.endproc
+
+;--------------------------------------
+; name
+; displays the room name given in (YX).
+.export __gui_name
+.proc __gui_name
+@x=zp::tmp0
+@y=zp::tmp1
+	stx @x
+	sty @y
+
+	lda #NAME_COL
+	sta text::colstart
+
+	; clear existing name
+	lda #129
+	ldx #NAME_COL_STOP-NAME_COL
+	stx text::len
+@l0:	sta mem::spare,x
+	dex
+	bpl @l0
+	lda #NAME_ROW
+	ldx #<mem::spare
+	ldy #>mem::spare
+	jsr text::puts
+
+	; print new name
+	ldx @x
+	ldy @y
+	lda #NAME_ROW
+	jmp text::print
 .endproc
 
 ;--------------------------------------
@@ -120,61 +158,52 @@ console: .byte 0,16,16,4
 ;--------------------------------------
 ;drawinv
 ;Displays the inventory.
-;
 .export __gui_drawinv
 .proc __gui_drawinv
-@spr = zp::tmp0
-@ystart = zp::tmp12
-@item = zp::tmp13
-@thing = zp::tmp14
-	; draw a white box for the inventory area
-	ldx #INV_XSTOP
-	ldy #INV_YSTOP
-	stx zp::tmp0
-	sty zp::tmp1
-	ldx #INV_XSTART
-	ldy #INV_YSTART
-	jsr __gui_wrect
+@done = zp::tmp0
+@row = zp::tmp1
+@item = zp::tmp2
+@msg = zp::tmp3
+	stx @msg
+	sty @msg+1
 
-	lda #INV_YSTART+1
-	sta @ystart
+	jsr __gui_clrtxt
+
+	lda #INV_COL_STOP-INV_COL_START
+	sta text::len
+
+	lda #INV_COL_START
+	sta text::colstart
+	lda #INV_ROW_START
+	sta @row
+
 	lda #$00
 	sta @item
+@l0:	lda @item
+	jsr inv::itemname
+	cpy #$00
+	beq @next
+	lda @row
+	jsr text::print
 
-@0:	inc @item
-	lda @item
-	cmp inv::len
-	bcc @1
-	rts
-
-@1:	asl
-	tay
-	lda inv::items,y
-	sta @thing
-	lda inv::items+1,y
-	sta @thing+1
-
-	; get the item's sprite
-	ldy #Thing::sprite
-	lda (@thing),y
-	tax
-	iny
-	lda (@thing),y
-	tay
-	jsr sprite::load
-
-	ldx #INV_XSTART+2
-	ldy @ystart
-	jsr sprite::set
-	jsr sprite::draw
-
-	lda sprite::h
+@next:	lda text::colstart
 	clc
-	adc @ystart
-	sta @ystart
-	cmp #INV_YSTOP
-	bcc @0
+	adc #16
+	cmp #INV_COL_STOP-16
+	bcc :+
 
+	inc @row
+	lda #INV_COL_START
+	sta text::colstart
+	lda @row
+	cmp #INV_ROW_STOP
+	bcc :+
+	rts		; we're out of rows
+
+:	inc @item
+	lda @item
+	cmp #64
+	bcc @l0
 	rts
 .endproc
 

@@ -6,129 +6,110 @@
 .CODE
 
 MAX_ITEMS=64
+ITEM_NAME_LEN=16
 
 .export __inventory_len
 __inventory_len:
 len:   .byte 0  ; # of items in player's inventory
+
 .export __inventory_items
 __inventory_items:
-items: .res 2*MAX_ITEMS ; the items in the player's inventory
-
-; table of sprite addresses for each item. Each entry represents an address
-; greater than the one that precedes it
-spritestable: .res 2*MAX_ITEMS
-
-; persistent buffer to store sprite graphic data
-spritesbuffer: .res 32*MAX_ITEMS
+items: .res MAX_ITEMS ; the ID's of items in the player's inventory
+namebuff: .res MAX_ITEMS*ITEM_NAME_LEN
 
 ;--------------------------------------
-; add adds the item of the ID (YX) to the player's inventory.
+; add adds the item of the ID in .A to the player's inventory.
+; the name is given in zp::arg0 and the description in zp::arg1
 ; this routine copies the sprite data for that item to a persistent location.
 .export __inventory_add
 .proc __inventory_add
-@sprite=zp::tmp0
-@dst=zp::tmp2
-	txa
+@name=zp::arg0
+@desc=zp::arg2
+@dst=zp::tmp0
 	pha
-	lda len
-	asl
-	tax
+	ldy #$00
+@l0:	lda items,y
+	beq :+
+	cpy #MAX_ITEMS
+	bcc @l0
 	pla
-	sta items,x
-	tya
-	sta items+1,x
-	inc len
+	rts	; inventory is full
 
-	; get the address to copy the sprite data to
-	lda spritestable+2,x
+:	pla
+	sta items,y
+
+	lda #$00
+	sta @dst+1
+	tya
+	; *16, get name address
+	asl
+	asl
+	asl
+	rol @dst+1
+	asl
+	rol @dst+1
+
+	adc #<namebuff
 	sta @dst
-	lda spritestable+3,x
+	lda #>namebuff
+	adc @dst+1
 	sta @dst+1
 
-	jsr room::gethandle
-	cmp #$ff
-	bne @copyfromroom
-
-	; TODO: load item from disk
-	rts
-
-@copyfromroom:
-	jsr room::getsprite
-	stx @sprite
-	sty @sprite+1
-	ldx len
-	ldy #$00
-	lda (@sprite),y
-	incw @sprite
-	tax
-	lda (@sprite),y
-	incw @sprite
-	tay
-	jsr m::mul8
-	asl	; *2 (alpha + color)
-
-	; copy the graphic data
-	tay
-@l0:	lda (@sprite),y
+	ldy #$ff
+@l1:	iny
+	lda (@name),y
 	sta (@dst),y
-	dey
-	bpl @l0
-	pha
+	bne @l1
 
-	; compute start address of next sprite that is loaded
-	lda len
-	asl
-	tax
-	pla
-	adc spritestable,x
-	sta spritestable+2,x
-	lda spritestable+1,x
-	adc #$00
-	sta spritestable+3,x
-@done:  rts
+	inc __inventory_len
+	rts
 .endproc
 
 ;--------------------------------------
 ; remove removes the item of the ID (YX) from the player's inventory.
 .export __inventory_remove
 .proc __inventory_remove
-@item = zp::tmp0
-@len2 = zp::tmp2
-@itemhi = zp::tmp3
-	lda #<items
-	sta @item
-	lda #>items
-	sta @item+1
-	lda len
+@dst=zp::tmp0
 	asl
-	sta @len2
-
-	sty @itemhi
-	ldy #$00
-@l0:	lda @itemhi
-	cmp (@item),y
-	bne @next
-	txa
-	iny
-	cmp (@item),y
-	beq @found
-
-	dey
-@next:	iny
-	iny
-	cpy @len2
-	bcc @l0
-	rts
-
-@found:	lda items+2,y
+	tay
+	lda #$00
 	sta items,y
-	lda items+3,y
-	sta items+1,y
-	iny
-	iny
-	cpy @len2
-	bcc @found
 
-	dec len
+	lda #$00
+	sta @dst
+	tya
+	; *16, get name address
+	asl
+	asl
+	asl
+	rol @dst
+	asl
+	rol @dst
+
+	lda #$00
+	ldy #ITEM_NAME_LEN-1
+@l0:	sta (@dst),y
+	dey
+	bpl @l0
+
+	dec __inventory_len
+	rts
+.endproc
+
+;--------------------------------------
+.export __inventory_itemname
+.proc __inventory_itemname
+@msb=zp::tmp5
+	ldx #$00
+	stx @msb+1
+	asl
+	asl
+	asl
+	rol @msb+1
+	adc #<namebuff
+	tax
+	lda @msb+1
+	adc #>namebuff
+	tay
 	rts
 .endproc

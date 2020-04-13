@@ -10,6 +10,7 @@ __text_speed:
 .byte 0
 
 ;--------------------------------------
+; print the 0-terminated string in (YX) at row .A
 .export __text_print
 .proc __text_print
 @str = zp::tmp0
@@ -18,17 +19,18 @@ __text_speed:
         sty @str+1
         lda mem::spare
 
-        ldx #$00
         ldy #$00
 ;copy the string (substituting escaped characters)
 @l0:    lda (@str),y
         beq @disp
         cmp #ESCAPE_CHARACTER
         bne :+
-:       sta mem::spare,x
+:       sta mem::spare,y
+	iny
         jmp @l0
 
-@disp:  ldx #<mem::spare
+@disp:  sty __text_len
+	ldx #<mem::spare
         ldy #>mem::spare
         pla
         jsr __text_puts
@@ -250,7 +252,7 @@ __text_charmap:
 .byte   0,   0,   0,   0,   0,   0,   0,   0
 ;CUSTOM CHARS. starting @ 128
 .byte   $44,$44,$44,$44,$44,$44,$44,$44        ; |
-.byte   $ff,$00,$00,$00,$00,$00,$00,$ff
+.byte   $ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff	       ; block
 .byte   $88,$88,$88,$88,$88,$88,$88,$88
 .byte   $ff,$00,$00,$00,$00,$00,$00,$00
 

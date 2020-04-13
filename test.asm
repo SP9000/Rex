@@ -10,16 +10,8 @@
 
 .export test
 .proc test
-	ldx #<rock
-	ldy #>rock
-	;jsr room::add
-	ldx #<rock
-	ldy #>rock
-	jsr inv::add
-	ldx #<rock
-	ldy #>rock
-	jsr inv::add
-	;jsr gui::drawinv
+	additem 1, #rockname
+	jsr gui::drawinv
 	rts
 .endproc
 
@@ -29,6 +21,8 @@ rock:
 	.word gfx::rock
 	;.word thing::usetake
 	.word rock_desc
+
+rockname: .byte "rock",0
 rock_desc:
 	.byte rock_desc_len, "a smooth purple pebble",0
 rock_desc_len=*-rock_desc

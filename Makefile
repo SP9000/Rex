@@ -7,7 +7,6 @@ disk: rex.prg
 rex.prg: $(SRC)
 	cl65 -o $@ -C link.config $^ -Ln labels.txt
 
-
 export:
 	python3 import_png.py overlay.png overlay.prg 0x1100
 	python3 rooms.py

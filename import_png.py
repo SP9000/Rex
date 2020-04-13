@@ -15,8 +15,11 @@ def importFile(filename, exportname, address):
         for y in range(height):
             pix = 0
             for px in range(8):
-                color = (1, 0)[pixels[x*8+px, y] == 0] # 1 if black
-                pix = pix | (color << (7-px))
+                p = pixels[x*8+px, y]
+                if type(p) is not int:
+                    p = p[0]
+                p = (1, 0)[p == 0] # 1 if black
+                pix = pix | (p << (7-px))
             outbuff.append(pix)
     width, height = img.size
     out.write(outbuff)
