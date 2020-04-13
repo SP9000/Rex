@@ -26,6 +26,7 @@ INV_COL_STOP  = 17*2
 INV_ROW_START = 18
 INV_ROW_STOP = 24
 INV_NUM_COLS = (INV_COL_STOP / 16)
+INV_NUM_ROWS = (INV_ROW_STOP - INV_ROW_START)
 
 ; bounds of scrolldown button
 SCROLLDOWN_X = 152
@@ -42,6 +43,8 @@ SCROLLUP_H = 8
 
 txtscroll: .byte 0 ;# of characters the text area is scrolled
 invscroll: .byte 0 ;# of pixels the inventory is scrolled
+inv_x:     .byte 0
+inv_y:     .byte 0
 
 ; struct TextRegion console
 console: .byte 0,16,16,4
@@ -160,7 +163,6 @@ console: .byte 0,16,16,4
 ;Displays the inventory.
 .export __gui_drawinv
 .proc __gui_drawinv
-@done = zp::tmp0
 @row = zp::tmp1
 @item = zp::tmp2
 @msg = zp::tmp3
@@ -197,13 +199,77 @@ console: .byte 0,16,16,4
 	sta text::colstart
 	lda @row
 	cmp #INV_ROW_STOP
-	bcc :+
-	rts		; we're out of rows
-
+	bcs @done  ; we're out of rows
 :	inc @item
 	lda @item
 	cmp #64
 	bcc @l0
+
+@done:	jsr highlightinv
+	rts
+.endproc
+
+;--------------------------------------
+; moveinvcursor moves the inventory cursor by the given row (.Y) and column (.X)
+.export __gui_moveinvcursor
+.proc __gui_moveinvcursor
+	txa
+	clc
+	adc inv_x
+	cmp #INV_NUM_COLS
+	bcs :+
+	sta inv_x
+:	tya
+	clc
+	adc inv_y
+	cmp #INV_NUM_ROWS
+	bcs :+
+	sta inv_y
+:	jsr highlightinv
+	rts
+.endproc
+
+;--------------------------------------
+; highlightinv highlights the currently selected item in the inventory.
+.export highlightinv
+.proc highlightinv
+@dst = zp::tmp0
+	lda inv_x
+	asl
+	asl
+	asl
+	adc #INV_COL_START
+	adc #INV_COL_START
+	tax
+	lda bm::columns,x
+	sta @dst
+	lda bm::columns+1,x
+	sta @dst+1
+
+	lda inv_y
+	adc #INV_ROW_START*8
+	adc @dst
+	sta @dst
+	lda @dst+1
+	adc #$00
+	sta @dst+1
+
+	ldx #16/2
+@l0:	ldy #$07
+@l1:	lda (@dst),y
+	eor #$ff
+	sta (@dst),y
+	dey
+	bpl @l1
+@nextcol:
+	lda @dst
+	clc
+	adc #$c0
+	sta @dst
+	bcc :+
+	inc @dst+1
+:	dex
+	bne @l0
 	rts
 .endproc
 

@@ -57,6 +57,7 @@ main:
         jmp main
 
 irq_handler:
+	jsr key::update
         jmp $eabf
 
 overlayfile:

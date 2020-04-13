@@ -1,9 +1,20 @@
 .include "handlers.inc"
+.include "gui.inc"
 .include "zeropage.inc"
 
 REPEAT_TMR=60
+repeat: .byte REPEAT_TMR
 
 .CODE
+;--------------------------------------
+.export __key_update
+.proc __key_update
+	lda repeat
+	beq @done
+	dec repeat
+@done:	rts
+.endproc
+
 ;--------------------------------------
 .export __key_handle
 .proc __key_handle
@@ -28,20 +39,46 @@ REPEAT_TMR=60
 	jmp room::south
 
 :	cmp #$45	; N
-	bne @done
+	bne :+
 	jmp room::north
+
+:	cmp #$25	; I
+	bne @done
+	jmp gui::drawinv
 
 @done:	rts
 .endproc
 
-repeat: .byte REPEAT_TMR
-
 ;--------------------------------------
 ; read one key from the keyboard. code (col bit # << 4) + row bit #) returned in .A
+;     7   6   5   4   3   2   1   0
+;    --------------------------------
+;  7| F7  F5  F3  F1  CDN CRT RET DEL    CRT=Cursor-Right, CDN=Cursor-Down
+;   |
+;  6| HOM UA  =   RSH /   ;   *   BP     BP=British Pound, RSH=Should be Right-SHIFT,
+;   |                                    UA=Up Arrow
+;  5| -   @   :   .   ,   L   P   +
+;   |
+;  4| 0   O   K   M   N   J   I   9
+;   |
+;  3| 8   U   H   B   V   G   Y   7
+;   |
+;  2| 6   T   F   C   X   D   R   5
+;   |
+;  1| 4   E   S   Z   LSH A   W   3      LSH=Should be Left-SHIFT
+;   |
+;  0| 2   Q   CBM SPC STP CTL LA  1      LA=Left Arrow, CTL=Should be CTRL, STP=RUN/STOP
+;   |                                    CBM=Commodore key
+;
 .export __key_get
 .proc __key_get
 @row=zp::tmp0
 @col=zp::tmp1
+	lda repeat
+	beq @ok
+	lda #$00	; repeat is still in countdown
+	rts
+@ok:
 	sei
 	lda #$00
 	sta $9123	; port A output
@@ -80,6 +117,8 @@ repeat: .byte REPEAT_TMR
 	asl
 	asl
 	adc @row
+	ldx #REPEAT_TMR
+	stx repeat
 	cli
 	rts
 .endproc
