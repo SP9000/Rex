@@ -1,8 +1,9 @@
-.include "handlers.inc"
 .include "gui.inc"
+.include "handlers.inc"
+.include "inventory.inc"
 .include "zeropage.inc"
 
-REPEAT_TMR=60
+REPEAT_TMR=10
 repeat: .byte REPEAT_TMR
 
 .CODE
@@ -19,8 +20,10 @@ repeat: .byte REPEAT_TMR
 .export __key_handle
 .proc __key_handle
 	jsr __key_get
-	beq @done
-	cmp #$51
+	bne :+
+	rts
+
+:	cmp #$51
 	bne @chkexits
 	on_space
 	rts
@@ -43,10 +46,60 @@ repeat: .byte REPEAT_TMR
 	jmp room::north
 
 :	cmp #$25	; I
-	bne @done
+	bne :+
 	jmp gui::drawinv
 
-@done:	rts
+:	cmp #$85	; 0
+	bne :+
+	lda #$00
+	jmp inv::select
+
+:	cmp #$11	; 1
+	bne :+
+	lda #$01
+	jmp inv::select
+
+:	cmp #$81	; 2
+	bne :+
+	lda #$02
+	jmp inv::select
+
+:	cmp #$12	; 3
+	bne :+
+	lda #$03
+	jmp inv::select
+
+:	cmp #$82	; 4
+	bne :+
+	lda #$04
+	jmp inv::select
+
+:	cmp #$13	; 5
+	bne :+
+	lda #$05
+	jmp inv::select
+
+:	cmp #$83	; 6
+	bne :+
+	lda #$06
+	jmp inv::select
+
+:	cmp #$14	; 7
+	bne :+
+	lda #$07
+	jmp inv::select
+
+:	cmp #$84	; 8
+	bne :+
+	lda #$08
+	jmp inv::select
+
+:	cmp #$15	; 9
+	bne :+
+	lda #$09
+	jmp inv::select
+
+:	rts
 .endproc
 
 ;--------------------------------------

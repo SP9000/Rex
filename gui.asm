@@ -24,7 +24,7 @@ NAME_COL_STOP =  20
 INV_COL_START = 2
 INV_COL_STOP  = 17*2
 INV_ROW_START = 18
-INV_ROW_STOP = 24
+INV_ROW_STOP = 23
 INV_NUM_COLS = (INV_COL_STOP / 16)
 INV_NUM_ROWS = (INV_ROW_STOP - INV_ROW_START)
 
@@ -43,8 +43,6 @@ SCROLLUP_H = 8
 
 txtscroll: .byte 0 ;# of characters the text area is scrolled
 invscroll: .byte 0 ;# of pixels the inventory is scrolled
-inv_x:     .byte 0
-inv_y:     .byte 0
 
 ; struct TextRegion console
 console: .byte 0,16,16,4
@@ -163,9 +161,10 @@ console: .byte 0,16,16,4
 ;Displays the inventory.
 .export __gui_drawinv
 .proc __gui_drawinv
-@row = zp::tmp1
-@item = zp::tmp2
-@msg = zp::tmp3
+@row = zp::tmp2
+@item = zp::tmp3
+@msg = zp::tmp4
+@numbuff = zp::tmp6
 	stx @msg
 	sty @msg+1
 
@@ -179,9 +178,33 @@ console: .byte 0,16,16,4
 	lda #INV_ROW_START
 	sta @row
 
+	lda #'.'
+	sta @numbuff+1
+	lda #0
+	sta @numbuff+2
+
 	lda #$00
 	sta @item
-@l0:	lda @item
+
+@l0:	lda #3
+	sta text::len
+	lda #'0'
+	clc
+	adc @item
+	sta @numbuff
+	ldx #<@numbuff
+	ldy #>@numbuff
+	lda @row
+	jsr text::print
+
+	lda #16-12
+	sta text::len
+	lda text::colstart
+	clc
+	adc #1
+	sta text::colstart
+
+	lda @item
 	jsr inv::itemname
 	cpy #$00
 	beq @next
@@ -190,7 +213,8 @@ console: .byte 0,16,16,4
 
 @next:	lda text::colstart
 	clc
-	adc #16
+	adc #7
+	sta text::colstart
 	cmp #INV_COL_STOP-16
 	bcc :+
 
@@ -200,41 +224,33 @@ console: .byte 0,16,16,4
 	lda @row
 	cmp #INV_ROW_STOP
 	bcs @done  ; we're out of rows
+
 :	inc @item
 	lda @item
+	cmp inv::len
+	bcs @done
 	cmp #64
 	bcc @l0
 
-@done:	jsr highlightinv
+@done:	lda #7
+	sta text::colstart
+	lda #INV_ROW_STOP
+	ldx #<@invmsg
+	ldy #>@invmsg
+	jsr text::print
+	jsr highlightinv
 	rts
+@invmsg: .byte "inventory",0
 .endproc
 
-;--------------------------------------
-; moveinvcursor moves the inventory cursor by the given row (.Y) and column (.X)
-.export __gui_moveinvcursor
-.proc __gui_moveinvcursor
-	txa
-	clc
-	adc inv_x
-	cmp #INV_NUM_COLS
-	bcs :+
-	sta inv_x
-:	tya
-	clc
-	adc inv_y
-	cmp #INV_NUM_ROWS
-	bcs :+
-	sta inv_y
-:	jsr highlightinv
-	rts
-.endproc
 
 ;--------------------------------------
 ; highlightinv highlights the currently selected item in the inventory.
 .export highlightinv
 .proc highlightinv
 @dst = zp::tmp0
-	lda inv_x
+	lda inv::selection
+	and #$01
 	asl
 	asl
 	asl
@@ -246,7 +262,11 @@ console: .byte 0,16,16,4
 	lda bm::columns+1,x
 	sta @dst+1
 
-	lda inv_y
+	lda inv::selection
+	lsr
+	asl
+	asl
+	asl
 	adc #INV_ROW_START*8
 	adc @dst
 	sta @dst

@@ -1,5 +1,6 @@
-.include "math.inc"
+.include "gui.inc"
 .include "macros.inc"
+.include "math.inc"
 .include "room.inc"
 .include "zeropage.inc"
 
@@ -17,6 +18,9 @@ __inventory_items:
 items: .res MAX_ITEMS ; the ID's of items in the player's inventory
 namebuff: .res MAX_ITEMS*ITEM_NAME_LEN
 
+.export __inventory_selection
+__inventory_selection: .byte 0
+
 ;--------------------------------------
 ; add adds the item of the ID in .A to the player's inventory.
 ; the name is given in zp::arg0 and the description in zp::arg1
@@ -30,6 +34,7 @@ namebuff: .res MAX_ITEMS*ITEM_NAME_LEN
 	ldy #$00
 @l0:	lda items,y
 	beq :+
+	iny
 	cpy #MAX_ITEMS
 	bcc @l0
 	pla
@@ -44,8 +49,6 @@ namebuff: .res MAX_ITEMS*ITEM_NAME_LEN
 	; *16, get name address
 	asl
 	asl
-	asl
-	rol @dst+1
 	asl
 	rol @dst+1
 
@@ -99,7 +102,7 @@ namebuff: .res MAX_ITEMS*ITEM_NAME_LEN
 ;--------------------------------------
 .export __inventory_itemname
 .proc __inventory_itemname
-@msb=zp::tmp5
+@msb=zp::tmpa
 	ldx #$00
 	stx @msb+1
 	asl
@@ -112,4 +115,14 @@ namebuff: .res MAX_ITEMS*ITEM_NAME_LEN
 	adc #>namebuff
 	tay
 	rts
+.endproc
+
+;--------------------------------------
+.export __inventory_select
+.proc __inventory_select
+	cmp __inventory_len
+	bcc :+
+	rts
+:	sta __inventory_selection
+	jmp gui::drawinv
 .endproc
