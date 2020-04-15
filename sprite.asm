@@ -1,7 +1,8 @@
-.include "math.inc"
-.include "zeropage.inc"
 .include "bitmap.inc"
+.include "math.inc"
 .include "memory.inc"
+.include "types.inc"
+.include "zeropage.inc"
 
 .CODE
 .scope sprite
@@ -308,6 +309,37 @@ __sprite_draw:
 	iny
 	lda (@spr),y
 	tay
+	rts
+.endproc
+
+;--------------------------------------
+; returns sprite size in (<.X, >.A)
+.export __sprite_size
+.proc __sprite_size
+@spr=zp::tmpa
+@msb=zp::tmpb
+	stx @spr
+	sty @spr+1
+	ldy #Sprite::width
+	lda (@spr),y
+	tax
+	ldy #Sprite::height
+	lda (@spr),y
+	tay
+        jsr m::mul8
+	ldy #$00
+	sty @msb
+	sta @spr
+	asl		; *2 for alpha data
+	rol @msb
+	adc @spr	; *3 for backup buffer
+	bcc :+
+	inc @msb
+	clc
+:	adc #5		; flags, x, and y pos, and ptr
+	tax
+	lda @msb
+	adc #$00
 	rts
 .endproc
 

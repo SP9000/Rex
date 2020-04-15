@@ -8,6 +8,6 @@ __mem_roombuff:
 	.res 666    ; things (sprites/handlers)
 .export __mem_spare
 __mem_spare:
-        .res 40
+        .res 512
 .endscope
 

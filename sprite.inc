@@ -10,6 +10,7 @@
 .import __sprite_draw
 .import __sprite_dim
 .import __sprite_pos
+.import __sprite_size
 
 ; There are two types of sprite routines: standard and fast. 
 ; The standard routines back up and restore the background prior to rendering.
@@ -36,4 +37,5 @@
         testsprite      = __sprite_testsprite
 	dim             = __sprite_dim       ; get the dimensions of the sprite
 	pos             = __sprite_pos       ; get the position of sprite
+	size	        = __sprite_size	     ; get size of the sprite data in bytes
 .endscope

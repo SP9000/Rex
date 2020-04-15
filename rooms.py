@@ -13,63 +13,57 @@ class Thing:
         self.x = 0
         self.y = 0
 
-    def writeSpriteData(out):
+    def writeSpriteData(self, out):
         outbuff = bytearray()
         outbuff.append(self.x)
         outbuff.append(self.y)
-        outbuff.append(self.width)
-        outbuff.append(self.height)
-        outbuff.append(0x00)    # flags (unused)
         out.write(bytes(outbuff))
 
-    def writePic(out):
-        if self.pic.endswith(".prg"):
-            with open(self.pic, "rb") as f:
-                f.read(2)
+    def writePic(self, out):
+        img = Image.open(self.pic)
+        pixels = img.load()
+        width, height = img.size
+        pixmap = bytearray()
+        alphamap = bytearray()
+        outbuff = bytearray()
+        outbuff.append(0x00)    # flags (unused)
+        outbuff.append(0x00)    # 2 bytes for ptr to gfx
+        outbuff.append(0x00)
+        outbuff.append(int(width/8))
+        outbuff.append(height)
+        out.write(outbuff)
 
-                outbuff = bytearray()
-                # read the pixel data
-                for x in range(0, self.width):
-                    for b in f.read(self.height):
-                        outbuff.append(b)
-                    f.read(192 - self.height)
-                # read the alpha channel
-                for x in range(0, self.width):
-                    for b in f.read(self.height):
-                        outbuff.append(b)
-                    f.read(192 - self.height)
-                out.write(bytes(outbuff))
-        else:
-            img = Image.open(self.pic)
-            pixels = img.load()
-            width, height = img.size
-            pixmap = bytearray()
-            alphamap = bytearray()
-            for x in range(0, width/8):
-                for y in range(0, height):
-                    alpha = 0
-                    pix = 0
-                    for px in range(0, 8):
-                        p = (1, 0)[pixels[x+px, y+py].r == 0] # 1 if black
-                        a = (1, 0)[pixels[x+px, y+py].a > 0] # 1 if not-trans
-                        pix = pix | (p << (7-px))
-                        alpha = alpha | (a << (7-py))
-                    alphamap.append(alpha)
-                    pixmap.append(pix)
-            out.write(bytes(pixmap))
-            out.write(bytes(alphamap))
+        backup = bytearray() # TODO: should not write this
+        for x in range(int(width/8)):
+            for y in range(height):
+                alpha = 0
+                pix = 0
+                for px in range(8):
+                    color = (0, 1)[pixels[x*8+px, y][0] == 0] # 1 if black
+                    a = 1
+                    # alpha is always 1 for unset pixels
+                    if color == 0:
+                        a = (0, 1)[pixels[x*8+px, y][3] == 0] # 1 if not-trans
+                    pix = pix | (color << (7-px))
+                    alpha = alpha | (a << (7-px))
+                alphamap.append(alpha)
+                pixmap.append(pix)
+                backup.append(0x00)
+        out.write(bytes(pixmap))
+        out.write(bytes(alphamap))
+        out.write(bytes(backup))
 
-    def writeHandler(out):
+    def writeHandler(self, out):
         with open(self.handler, "rb") as binfile:
             handler = bytearray(binfile.read())
             out.write(handler)
 
-    def write(buf):
-        buf.write(self.name)
-        buf.write(self.description)
+    def write(self, out):
+        #buf.write(self.name)
+        #buf.write(self.description)
         self.writeSpriteData(out)
         self.writePic(out)
-        self.writeHandler(out)
+        #self.writeHandler(out)
 
 class Rock(Thing):
     def __init__(self):
@@ -77,6 +71,24 @@ class Rock(Thing):
         self.name = "rock"
         self.description = "A rough piece of sediment"
         self.handler = "rock.bin"
+
+class Gardener(Thing):
+    def __init__(self):
+        super().__init__()
+        self.x = 50
+        self.y = 50
+        self.name = "gardener"
+        self.pic = "sprites/gardener.png"
+        self.description = "The menacing man snarls at you from the end of the gazebo"
+
+class Bone(Thing):
+    def __init__(self):
+        super().__init__()
+        self.x = 50
+        self.y = 90
+        self.name = "bone"
+        self.pic = "sprites/bone.png"
+        self.description = "The bone has been licked clean"
 
 
 #######################################
@@ -173,12 +185,20 @@ class Room:
         strings.append(0x00)
         out.write(strings)
 
+        # write the number of things
+        numThings = bytearray()
+        numThings.append(len(self.things))
+        out.write(numThings)
+
         # export the things
         for t in self.things:
             t.write(out)
 
-        self.writeHandler(out)
+        terminator = bytearray()
+        terminator.append(0x00)
+        out.write(terminator)
 
+        self.writeHandler(out)
         print("exported {}".format(self.exportAs))
 
 class Tunnel(Room):
@@ -210,6 +230,10 @@ class Gazebo(Room):
         self.name = "gazebo"
         self.description = "the gazebo is in relatively good shape. it seems newly built compared to the other worn remains that dot the garden."
         self.exits = {"S": "GARDEN.PRG"}
+        self.things = [
+            Bone(), 
+            #Gardener(),
+        ]
 
 class Cemetery(Room):
     def __init__(self):

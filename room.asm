@@ -21,15 +21,17 @@ NUM_EXITS=6
 numrooms: .byt 0
 
 
-spritetable: .res MAX_THINGS*2
 idstable: .res MAX_THINGS*2
 nametable: .res MAX_THINGS*2
 desctable: .res MAX_THINGS*2
 usetable: .res MAX_THINGS*2
+
 numthings: .byte 0
+sprites: .res MAX_THINGS*2
 
 name: .word 0
 description: .word 0
+
 
 ; the addresses for room names for N,S,E,W,U,D
 exits: .res 2*6
@@ -51,10 +53,10 @@ exits: .res 2*6
 
 	ldy #$00
 	lda (@t),y
-	sta spritetable,x
+	sta sprites,x
 	iny
 	lda (@t),y
-	sta spritetable+1,x
+	sta sprites+1,x
 
 	iny
 	lda (@t),y
@@ -120,9 +122,9 @@ exits: .res 2*6
 .export __room_getsprite
 .proc __room_getsprite
 	tax
-	lda spritetable+1,x
+	lda sprites+1,x
 	tay
-	lda spritetable,x
+	lda sprites,x
 	tax
 	rts
 .endproc
@@ -177,12 +179,10 @@ exits: .res 2*6
 ;update updates tables with the buffered room data
 .export __room_update
 .proc __room_update
-	@room = zp::tmp0
-	@src = zp::tmp0
-	@dst = zp::tmp2
-	@t = zp::tmp4
-	@desc = mem::roombuff + (ROOM_WIDTH*ROOM_HEIGHT)
-
+@src = zp::tmp0
+@dst = zp::tmp2
+@cnt = zp::tmp4
+@desc = mem::roombuff + (ROOM_WIDTH*ROOM_HEIGHT)
 	; load the room image data
 	ldx #<mem::roombuff
 	ldy #>mem::roombuff
@@ -261,8 +261,47 @@ exits: .res 2*6
 	bne :-
 
 	; get the things in the room
-	; TODO
+	lda (@src),y
+	sta numthings
+	beq @done
+	incw @src
+	lda #$00
+	sta @cnt
+
 @things:
+	lda (@src),y
+	beq @done
+@getthing:
+	lda @cnt
+	cmp numthings
+	beq @done
+	inc @cnt
+	asl
+	tax
+	lda @src+1
+	sta sprites+1,x
+	tay
+	lda @src
+	sta sprites,x
+	adc #$05
+	ldy #3
+	sta (@src),y
+	lda @src+1
+	adc #$00
+	iny
+	sta (@src),y
+
+	tax
+	jsr sprite::size
+	adc @src+1
+	sta @src+1
+	txa
+	adc @src
+	sta @src
+	lda @src+1
+	adc #$00
+	sta @src+1
+	jmp @things
 
 @done:
 	jsr gui::clrtxt
@@ -275,6 +314,25 @@ exits: .res 2*6
 	ldy name+1
 	jsr gui::name
 
+	; enable the sprites
+	ldx numthings
+	beq @writedesc
+	dex
+
+:	txa
+	pha
+	asl
+	tax
+	lda sprites,x
+	ldy sprites+1,x
+	tax
+	jsr sprite::on
+	pla
+	tax
+	dex
+	bpl :-
+
+@writedesc:
 	; write the room's description
 	ldx description
 	ldy description+1
@@ -283,6 +341,7 @@ exits: .res 2*6
 	jsr gui::txt
 	lda #0
 	sta text::speed
+
 	rts
 .endproc
 
@@ -343,9 +402,9 @@ __room_look:
 	; get the thing's positon
 :	asl
 	tay
-	lda spritetable+1,x
+	lda sprites+1,x
 	tay
-	lda spritetable,x
+	lda sprites,x
 	tax
 	jsr sprite::pos
 	stx @xpos
@@ -355,9 +414,9 @@ __room_look:
 	lda @i
 	asl
 	tay
-	lda spritetable+1,y
+	lda sprites+1,y
 	tay
-	lda spritetable,x
+	lda sprites,x
 	tax
 	jsr sprite::dim
 	clc
