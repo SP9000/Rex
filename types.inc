@@ -13,10 +13,7 @@
 .struct Sprite 
         xpos    .byte   ;the x coordinate
         ypos    .byte   ;the y coordinate
-	width   .byte   ;sprite's width
-	height  .byte   ;height of the sprite
-        flags   .byte   ;user flags - unused
-	data	.byte	;variable length
+	data	.word	;ptr to rest of data
 .endstruct
 
 .struct Room
@@ -27,4 +24,5 @@
 .struct SpriteDat
 	W       .byte   ; width of the sprite data
 	H	.byte   ; height of the sprite data
+	data	.byte	; sprite data
 .endstruct

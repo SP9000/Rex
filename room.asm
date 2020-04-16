@@ -263,12 +263,14 @@ exits: .res 2*6
 	; get the things in the room
 	lda (@src),y
 	sta numthings
-	beq @done
-	incw @src
+	bne :+
+	jmp @done
+:	incw @src
 	lda #$00
 	sta @cnt
 
 @things:
+	ldy #$00
 	lda (@src),y
 	beq @done
 @getthing:
@@ -278,29 +280,51 @@ exits: .res 2*6
 	inc @cnt
 	asl
 	tax
-	lda @src+1
-	sta sprites+1,x
-	tay
 	lda @src
 	sta sprites,x
-	adc #$05
-	ldy #3
+	lda @src+1
+	sta sprites+1,x
+
+	; move past x, y, flags
+	lda @src
+	adc #$03
+	sta @src
+	bcc :+
+	inc @src+1
+
+:	; compute address of sprite graphics
+	adc #$02
 	sta (@src),y
 	lda @src+1
 	adc #$00
-	iny
+	incw @src
 	sta (@src),y
+	incw @src
 
-	tax
+	; move pointer past the sprite data
+	ldx @src
+	ldy @src+1
 	jsr sprite::size
-	adc @src+1
-	sta @src+1
+	pha
 	txa
 	adc @src
 	sta @src
-	lda @src+1
-	adc #$00
+	pla
+	adc @src+1
 	sta @src+1
+
+	; move pointer past handler code (add handler length)
+	ldy #$00
+	lda (@src),y
+	adc @src
+	tax
+	iny
+	lda (@src),y
+	adc @src+1
+	stx @src
+	sta @src+1
+	incw @src
+	incw @src
 	jmp @things
 
 @done:

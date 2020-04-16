@@ -35,8 +35,8 @@
         ldx __app_cursor
         ldy __app_cursor+1
 	jsr sprite::off
-	ldx gfx::cursorsprite+Sprite::data
-	ldy gfx::cursorsprite+Sprite::data+1
+	ldx gfx::cursorsprite+SpriteDat::data
+	ldy gfx::cursorsprite+SpriteDat::data+1
 	cpx #<gfx::cursor
 	bne @setselect
 	cpy #>gfx::cursor
@@ -51,8 +51,8 @@
 	ldx #<gfx::cursor
 	ldy #>gfx::cursor
 
-@set:	stx gfx::cursorsprite+Sprite::data
-	sty gfx::cursorsprite+Sprite::data+1
+@set:	stx gfx::cursorsprite+SpriteDat::data
+	sty gfx::cursorsprite+SpriteDat::data+1
         ldx __app_cursor
         ldy __app_cursor+1
 	jsr sprite::on

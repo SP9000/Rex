@@ -1,3 +1,5 @@
+import os
+import tempfile
 from PIL import Image
 
 #######################################
@@ -18,6 +20,7 @@ class Thing:
         outbuff.append(self.x)
         outbuff.append(self.y)
         out.write(bytes(outbuff))
+        return len(outbuff)
 
     def writePic(self, out):
         img = Image.open(self.pic)
@@ -52,18 +55,49 @@ class Thing:
         out.write(bytes(pixmap))
         out.write(bytes(alphamap))
         out.write(bytes(backup))
+        return len(pixmap)+len(alphamap)+len(backup)
 
-    def writeHandler(self, out):
-        with open(self.handler, "rb") as binfile:
-            handler = bytearray(binfile.read())
-            out.write(handler)
+    def writeHandler(self, out, addr):
+        if self.handler == "":
+            length = bytearray()
+            length.append(0x00)
+            length.append(0x00)
+            out.write(length)
+            return 2
 
-    def write(self, out):
+        if os.isfile(self.handler):
+            # treat string as filename of assembly
+            src = self.handler
+        else:
+            # treat string as assembly code
+            src = tmpfile.TmpFile()
+            src.write(self.handler)
+
+        # assemble the handler and write the binary
+        outfile = tmpfile.TempFile()
+        os.execl('cl65', '--start-addr ' + str(addr),
+                '-o '  + outfile, src)
+        handler = bytearray(outfile.read())
+
+        # write length of the handler binary (little endian)
+        length = bytearray()
+        length.append((len(handler)) & 0xff)
+        length.append((len(handler)) & 0xff00 >> 8)
+        out.write(length)
+        out.write(handler)
+        os.remove(outfile)
+        return len(handler)+2
+
+    def write(self, out, addr):
         #buf.write(self.name)
+        # addr += len(self.name) + 1
         #buf.write(self.description)
-        self.writeSpriteData(out)
-        self.writePic(out)
-        #self.writeHandler(out)
+        # addr += len(self.descriptio) + 1
+        addr += self.writeSpriteData(out)
+        addr += self.writePic(out)
+        addr += self.writeHandler(out, addr)
+
+        return addr
 
 class Rock(Thing):
     def __init__(self):
@@ -136,6 +170,7 @@ class Room:
                         pix = pix | (color << (7-px))
                     outbuff.append(pix)
         out.write(outbuff)
+        return int(112*96/8)   # size of image
 
     def writeExit(self, out, exitFile):
         # write length-prefixed file of exit
@@ -167,7 +202,7 @@ class Room:
         loadAddr.append(0x00)
         loadAddr.append(0x60)
         out.write(loadAddr)
-        self.writePic(out)
+        addr = self.writePic(out)
 
         # write the exits
         self.writeExit(out, self.exits.get("N"))
@@ -176,6 +211,7 @@ class Room:
         self.writeExit(out, self.exits.get("W"))
         self.writeExit(out, self.exits.get("D"))
         self.writeExit(out, self.exits.get("U"))
+        addr += 6
         
         # write the name & description (0-terminated)
         strings = bytearray()
@@ -184,15 +220,17 @@ class Room:
         strings.extend(map(ord, self.description))
         strings.append(0x00)
         out.write(strings)
+        addr += len(strings)
 
         # write the number of things
         numThings = bytearray()
         numThings.append(len(self.things))
         out.write(numThings)
+        addr += 1
 
         # export the things
         for t in self.things:
-            t.write(out)
+            addr += t.write(out, addr)
 
         terminator = bytearray()
         terminator.append(0x00)
@@ -232,7 +270,7 @@ class Gazebo(Room):
         self.exits = {"S": "GARDEN.PRG"}
         self.things = [
             Bone(), 
-            #Gardener(),
+            Gardener(),
         ]
 
 class Cemetery(Room):

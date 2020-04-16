@@ -317,13 +317,13 @@ __sprite_draw:
 .export __sprite_size
 .proc __sprite_size
 @spr=zp::tmpa
-@msb=zp::tmpb
+@msb=zp::tmpc
 	stx @spr
 	sty @spr+1
-	ldy #Sprite::width
+	ldy #SpriteDat::W
 	lda (@spr),y
 	tax
-	ldy #Sprite::height
+	ldy #SpriteDat::H
 	lda (@spr),y
 	tay
         jsr m::mul8
@@ -336,7 +336,7 @@ __sprite_draw:
 	bcc :+
 	inc @msb
 	clc
-:	adc #5		; flags, x, and y pos, and ptr
+:	adc #2		; w/h
 	tax
 	lda @msb
 	adc #$00
