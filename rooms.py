@@ -1,6 +1,19 @@
 import os
 import tempfile
+import subprocess
 from PIL import Image
+
+def makeIncludeFile(filename):
+    infile = open(filename, "r")
+    out = open("engine.inc", "w")
+    for line in infile.readlines():
+        # input looks like: al 0022A3 .label
+        # output: label = $22A3
+        parts = line.split()
+        out.write(parts[2][1:] + " = $" + parts[1][2:] + "\n")
+    infile.close()
+    out.close()
+    return os.path.basename(out.name)
 
 #######################################
 # Things
@@ -10,6 +23,7 @@ class Thing:
         self.description = "" # the description of the thing
         self.pic = ""         # the filename of the thing's picture file
         self.handler = ""     # the filename of the handler binary
+        self.setup = ""     # the filename of the setup binary
         self.height = 0       # height of the picture (# rows)
         self.width = 0        # width of the picture in chars (# of columns / 8)
         self.x = 0
@@ -52,50 +66,87 @@ class Thing:
                 alphamap.append(alpha)
                 pixmap.append(pix)
                 backup.append(0x00)
+        for y in range(height):
+            backup.append(0x00)
+
         out.write(bytes(pixmap))
         out.write(bytes(alphamap))
         out.write(bytes(backup))
-        return len(pixmap)+len(alphamap)+len(backup)
+        return 5+len(pixmap)+len(alphamap)+len(backup) # the +5 is for sprite data
 
-    def writeHandler(self, out, addr):
-        if self.handler == "":
+    def writeIncfile(self, nameAddr, descAddr, spriteAddr):
+        # write an include file for the handler to use
+        strs = [
+                "name = $" + hex(nameAddr)[2:] + '\n',
+                "description = $" + hex(descAddr)[2:] + '\n',
+                "sprite = $" + hex(spriteAddr)[2:] + '\n'
+        ]
+        out = open("__handler.inc", "w")
+        out.writelines(strs)
+        return "__handler.inc"
+
+    def writeAsm(self, sourceFile, out, addr, incfile):
+        if sourceFile == "":
             length = bytearray()
             length.append(0x00)
             length.append(0x00)
             out.write(length)
-            return 2
+            return len(length)
 
-        if os.isfile(self.handler):
-            # treat string as filename of assembly
-            src = self.handler
-        else:
+        if not os.path.isfile(sourceFile):
             # treat string as assembly code
-            src = tmpfile.TmpFile()
-            src.write(self.handler)
+            f = open("__handler.asm",'w+t')
+            f.write(sourceFile)
+            sourceFile = f.name
+            f.close()
+        if sourceFile[-4:] == ".asm":
+            # assemble the handler and write the binary with cl65
+            # cl65 --startaddr 0xaaaa -O -t none __handler.asm
+            # the +2 is because the length will prefix the handler code
+            proc = subprocess.call('cl65 --start-addr ' + hex(addr+0x6000+2) + ' -t none -o __out.bin ' + sourceFile,
+                    shell = True)
+            try:
+                outfile = open("__out.bin", "rb")
+            except OSError:
+                print("Could not open/read file __out.bin:")
+                return 0
+        else:
+            # treat input file as output file (already assembled)
+            outfile = open(sourceFile, "rb")
 
-        # assemble the handler and write the binary
-        outfile = tmpfile.TempFile()
-        os.execl('cl65', '--start-addr ' + str(addr),
-                '-o '  + outfile, src)
         handler = bytearray(outfile.read())
-
+        if not handler:
+            print('failed to read output file')
+            return 0
+        outfile.close()
         # write length of the handler binary (little endian)
         length = bytearray()
-        length.append((len(handler)) & 0xff)
-        length.append((len(handler)) & 0xff00 >> 8)
+        l = len(handler).to_bytes(2, byteorder='little')
+        length.append(l[0])
+        length.append(l[1])
         out.write(length)
         out.write(handler)
-        os.remove(outfile)
-        return len(handler)+2
+        return len(handler)+len(length)
 
     def write(self, out, addr):
-        #buf.write(self.name)
-        # addr += len(self.name) + 1
-        #buf.write(self.description)
-        # addr += len(self.descriptio) + 1
+        strings = bytearray()
+        nameAddr = addr
+        strings.extend(map(ord, self.name))
+        strings.append(0x00)
+        descAddr = addr + len(strings)
+        strings.extend(map(ord, self.description))
+        strings.append(0x00)
+        out.write(strings)
+
+        addr += len(strings)
+        spriteAddr = addr
+
+        incfile = self.writeIncfile(nameAddr, descAddr, spriteAddr)
         addr += self.writeSpriteData(out)
         addr += self.writePic(out)
-        addr += self.writeHandler(out, addr)
+        addr += self.writeAsm(self.setup, out, addr, incfile)
+        addr += self.writeAsm(self.handler, out, addr, incfile)
+        os.remove(incfile)
 
         return addr
 
@@ -109,7 +160,7 @@ class Rock(Thing):
 class Gardener(Thing):
     def __init__(self):
         super().__init__()
-        self.x = 50
+        self.x = 65
         self.y = 50
         self.name = "gardener"
         self.pic = "sprites/gardener.png"
@@ -118,12 +169,13 @@ class Gardener(Thing):
 class Bone(Thing):
     def __init__(self):
         super().__init__()
-        self.x = 50
-        self.y = 90
+        self.x = 65
+        self.y = 95
         self.name = "bone"
         self.pic = "sprites/bone.png"
         self.description = "The bone has been licked clean"
-
+        self.setup = ""
+        self.handler = "things/rock.asm"
 
 #######################################
 # Rooms
@@ -170,7 +222,7 @@ class Room:
                         pix = pix | (color << (7-px))
                     outbuff.append(pix)
         out.write(outbuff)
-        return int(112*96/8)   # size of image
+        return len(outbuff)   # size of image
 
     def writeExit(self, out, exitFile):
         # write length-prefixed file of exit
@@ -182,6 +234,7 @@ class Room:
             outbuff.append(length)
             outbuff.extend(map(ord, exitFile))
         out.write(outbuff)
+        return len(outbuff)
 
     def writeHandler(self, out):
         if self.handler == "":
@@ -205,13 +258,12 @@ class Room:
         addr = self.writePic(out)
 
         # write the exits
-        self.writeExit(out, self.exits.get("N"))
-        self.writeExit(out, self.exits.get("S"))
-        self.writeExit(out, self.exits.get("E"))
-        self.writeExit(out, self.exits.get("W"))
-        self.writeExit(out, self.exits.get("D"))
-        self.writeExit(out, self.exits.get("U"))
-        addr += 6
+        addr += self.writeExit(out, self.exits.get("N"))
+        addr += self.writeExit(out, self.exits.get("S"))
+        addr += self.writeExit(out, self.exits.get("E"))
+        addr += self.writeExit(out, self.exits.get("W"))
+        addr += self.writeExit(out, self.exits.get("D"))
+        addr += self.writeExit(out, self.exits.get("U"))
         
         # write the name & description (0-terminated)
         strings = bytearray()
@@ -226,7 +278,7 @@ class Room:
         numThings = bytearray()
         numThings.append(len(self.things))
         out.write(numThings)
-        addr += 1
+        addr += len(numThings)
 
         # export the things
         for t in self.things:
@@ -235,6 +287,7 @@ class Room:
         terminator = bytearray()
         terminator.append(0x00)
         out.write(terminator)
+        addr += len(terminator)
 
         self.writeHandler(out)
         print("exported {}".format(self.exportAs))
@@ -287,5 +340,6 @@ rooms = [Garden(),
         Gazebo(),
         Tunnel()]
 
+makeIncludeFile("labels.txt")
 for r in rooms:
     r.write()

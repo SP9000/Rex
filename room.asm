@@ -20,11 +20,11 @@ NUM_EXITS=6
 ;--------------------------------------
 numrooms: .byt 0
 
-
 idstable: .res MAX_THINGS*2
 nametable: .res MAX_THINGS*2
 desctable: .res MAX_THINGS*2
-usetable: .res MAX_THINGS*2
+setuptable: .res MAX_THINGS*2
+handlertable: .res MAX_THINGS*2
 
 numthings: .byte 0
 sprites: .res MAX_THINGS*2
@@ -74,10 +74,10 @@ exits: .res 2*6
 
 	iny
 	lda (@t),y
-	sta usetable,x
+	sta handlertable,x
 	iny
 	lda (@t),y
-	sta usetable+1,x
+	sta handlertable+1,x
 	rts
 .endproc
 
@@ -272,14 +272,41 @@ exits: .res 2*6
 @things:
 	ldy #$00
 	lda (@src),y
-	beq @done
+	bne @getthing
+	jmp @done
+
 @getthing:
 	lda @cnt
 	cmp numthings
-	beq @done
-	inc @cnt
-	asl
+	bne :+
+	jmp @done
+
+:	asl
 	tax
+
+@getname:
+	lda @src
+	sta nametable,x
+	lda @src+1
+	sta nametable+1,x
+:	lda (@src),y
+	php
+	incw @src
+	plp
+	bne :-
+
+@getdesc:
+	lda @src
+	sta desctable,x
+	lda @src+1
+	sta desctable+1,x
+:	lda (@src),y
+	php
+	incw @src
+	plp
+	bne :-
+
+@getsprite:
 	lda @src
 	sta sprites,x
 	lda @src+1
@@ -313,7 +340,23 @@ exits: .res 2*6
 	adc @src+1
 	sta @src+1
 
-	; move pointer past handler code (add handler length)
+
+	; move pointer past setup code (add handler length)
+	lda @cnt
+	asl
+	tax
+	ldy #$01
+	lda (@src),y	; if MSB is 0, store $0000 for the handler
+	bne :+
+	sta setuptable,x
+	sta setuptable+1,x
+	beq @setupdone
+:	lda @src	; otherwise store the address of the handler
+	adc #2
+	sta setuptable,x
+	lda @src+1
+	adc #0
+	sta setuptable+1,x
 	ldy #$00
 	lda (@src),y
 	adc @src
@@ -323,8 +366,39 @@ exits: .res 2*6
 	adc @src+1
 	stx @src
 	sta @src+1
+@setupdone:
 	incw @src
 	incw @src
+
+	; move pointer past handler code (add handler length)
+	lda numthings
+	asl
+	tax
+	ldy #$01
+	lda (@src),y	; if MSB is 0, store $0000 for the handler
+	bne :+
+	sta setuptable,x
+	sta setuptable+1,x
+	beq @handlerdone
+:	lda @src
+	sta handlertable,x
+	lda @src+1
+	sta handlertable+1,x
+	ldy #$00
+	lda (@src),y
+	adc @src
+	tax
+	iny
+	lda (@src),y
+	adc @src+1
+	stx @src
+	sta @src+1
+@handlerdone:
+	incw @src
+	incw @src
+
+@nextthing:
+	inc @cnt
 	jmp @things
 
 @done:
@@ -342,7 +416,6 @@ exits: .res 2*6
 	ldx numthings
 	beq @writedesc
 	dex
-
 :	txa
 	pha
 	asl
@@ -351,6 +424,17 @@ exits: .res 2*6
 	ldy sprites+1,x
 	tax
 	jsr sprite::on
+	pla
+	tax
+	dex
+	bpl :-
+
+	; run setup code
+	ldx numthings
+	dex
+:	txa
+	pha
+	jsr setup
 	pla
 	tax
 	dex
@@ -370,15 +454,34 @@ exits: .res 2*6
 .endproc
 
 ;--------------------------------------
+; setup runs the handler for the thing given in .A
+.export setup
+.proc setup
+	asl
+	tay
+	lda setuptable,y
+	sta @handle
+	lda setuptable+1,y
+	bne :+
+	rts
+:	sta @handle+1
+@handle=*+1
+	jmp $ffff
+.endproc
+
+
+;--------------------------------------
 ; use runs the handler for the thing given in .A
 .export use
 .proc use
 	asl
 	tay
-	lda usetable,y
+	lda handlertable,y
 	sta @handle
-	lda usetable+1,y
-	sta @handle+1
+	lda handlertable+1,y
+	bne :+
+	rts
+:	sta @handle+1
 @handle=*+1
 	jmp $ffff
 .endproc

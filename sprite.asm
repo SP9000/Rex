@@ -122,6 +122,7 @@ __sprite_draw:
         stx @smc4
         lda #$00
 
+	dex
 ;clear the color buffer ($00)
 @l0:    sta next_cols,x
         dex
@@ -318,6 +319,7 @@ __sprite_draw:
 .proc __sprite_size
 @spr=zp::tmpa
 @msb=zp::tmpc
+@height=zp::tmpd
 	stx @spr
 	sty @spr+1
 	ldy #SpriteDat::W
@@ -325,6 +327,7 @@ __sprite_draw:
 	tax
 	ldy #SpriteDat::H
 	lda (@spr),y
+	sta @height
 	tay
         jsr m::mul8
 	ldy #$00
@@ -335,7 +338,10 @@ __sprite_draw:
 	adc @spr	; *3 for backup buffer
 	bcc :+
 	inc @msb
-	clc
+:	clc
+	adc @height	; backup buffer has 1 extra column
+	bcc :+
+	inc @msb
 :	adc #2		; w/h
 	tax
 	lda @msb

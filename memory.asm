@@ -7,6 +7,7 @@ __mem_roombuff:
 	.res 384    ; description
 	.res 666    ; things (sprites/handlers)
 .export __mem_spare
+.align 256
 __mem_spare:
         .res 512
 .endscope
