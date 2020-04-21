@@ -120,9 +120,12 @@ __inventory_selection: .byte 0
 ;--------------------------------------
 .export __inventory_select
 .proc __inventory_select
-	cmp __inventory_len
-	bcc :+
+	cmp __inventory_selection
+	bne :+
 	rts
-:	sta __inventory_selection
+:	cmp __inventory_len
+	bcc @redraw
+@redraw:
+	sta __inventory_selection
 	jmp gui::drawinv
 .endproc

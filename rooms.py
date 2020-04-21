@@ -15,6 +15,16 @@ def makeIncludeFile(filename):
     out.close()
     return os.path.basename(out.name)
 
+idsByName = {}
+
+def makeItemFile(items):
+    f = open("items.inc", 'w')
+    for i, thing in enumerate(items):
+        handle = i + 1
+        f.write('ITEM_' + thing.name + " = " + str(handle) + '\n')
+        idsByName[thing.name] = handle
+    f.close()
+
 #######################################
 # Things
 class Thing:
@@ -129,6 +139,8 @@ class Thing:
         return len(handler)+len(length)
 
     def write(self, out, addr):
+        self.id = idsByName[self.name]
+
         strings = bytearray()
         nameAddr = addr
         strings.extend(map(ord, self.name))
@@ -340,6 +352,8 @@ rooms = [Garden(),
         Gazebo(),
         Tunnel()]
 
+
+makeItemFile([Bone(), Rock(), Gardener()])
 makeIncludeFile("labels.txt")
 for r in rooms:
     r.write()
