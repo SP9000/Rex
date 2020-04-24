@@ -1,7 +1,13 @@
 .include "app_sprites.inc"
+.include "base.inc"
+.include "constants.inc"
+.include "gui.inc"
 .include "sprite.inc"
 .include "types.inc"
 .CODE
+
+.export action
+action: .byte 0
 
 ;--------------------------------------
 .export __app_movecur
@@ -30,33 +36,28 @@
 .endproc
 
 ;--------------------------------------
-.export __app_togglecur
-.proc __app_togglecur
-        ldx __app_cursor
-        ldy __app_cursor+1
-	jsr sprite::off
-	ldx gfx::cursorsprite+SpriteDat::data
-	ldy gfx::cursorsprite+SpriteDat::data+1
-	cpx #<gfx::cursor
-	bne @setselect
-	cpy #>gfx::cursor
-	bne @setselect
-
+.export __app_setaction
+.proc __app_setaction
+	sta action
+	cmp #ACTION_USE
+	beq @setselect
+	cmp #ACTION_TAKE
+	beq @settake
 @setlook:
-	ldx #<gfx::eye
-	ldy #>gfx::eye
+	ldx #<@look
+	ldy #>@look
 	jmp @set
-
 @setselect:
-	ldx #<gfx::cursor
-	ldy #>gfx::cursor
-
-@set:	stx gfx::cursorsprite+SpriteDat::data
-	sty gfx::cursorsprite+SpriteDat::data+1
-        ldx __app_cursor
-        ldy __app_cursor+1
-	jsr sprite::on
-	rts
+	ldx #<@use
+	ldy #>@use
+	jmp @set
+@settake:
+	ldx #<@take
+	ldy #>@take
+@set:	jmp gui::action
+@look: .byte "look",0
+@use: .byte "use",0
+@take: .byte "take",0
 .endproc
 
 ;--------------------------------------

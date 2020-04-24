@@ -20,6 +20,9 @@ NAME_ROW =  16
 NAME_COL =  4
 NAME_COL_STOP =  20
 
+ACTION_COL = 9
+ACTION_ROW = 1
+
 ; the bounds of the inventory area
 INV_COL_START = 2
 INV_COL_STOP  = 17*2
@@ -154,6 +157,17 @@ console: .byte 0,16,16,4
 	cmp #TXT_ROW_STOP
 	bcc @l0
 @0:	rts
+.endproc
+
+;--------------------------------------
+; action sets the displayed user action to the string in (YX)
+.export __gui_action
+.proc __gui_action
+	lda #ACTION_COL
+	sta text::colstart
+	lda #ACTION_ROW
+	jsr text::print
+	rts
 .endproc
 
 ;--------------------------------------

@@ -1,4 +1,5 @@
 .include "app.inc"
+.include "base.inc"
 .include "file.inc"
 .include "fx.inc"
 .include "gui.inc"
@@ -341,7 +342,6 @@ exits: .res 2*6
 	sta @src+1
 
 
-	; move pointer past setup code (add handler length)
 	lda @cnt
 	asl
 	tax
@@ -371,19 +371,28 @@ exits: .res 2*6
 	incw @src
 
 	; move pointer past handler code (add handler length)
-	lda numthings
+	lda @cnt
 	asl
 	tax
 	ldy #$01
-	lda (@src),y	; if MSB is 0, store $0000 for the handler
+	lda (@src),y	; if len is 0, store $0000 for the handler
+	bne :+
+	dey
+	lda (@src),y
 	bne :+
 	sta setuptable,x
 	sta setuptable+1,x
 	beq @handlerdone
+
 :	lda @src
+	clc
+	adc #$02
 	sta handlertable,x
 	lda @src+1
+	adc #$00
 	sta handlertable+1,x
+
+	; add handler length
 	ldy #$00
 	lda (@src),y
 	adc @src
@@ -528,7 +537,7 @@ __room_look:
 
 	; get the thing's positon
 :	asl
-	tay
+	tax
 	lda sprites+1,x
 	tay
 	lda sprites,x
@@ -540,8 +549,8 @@ __room_look:
 	; get the thing's dimensions and compute bounds of its rect
 	lda @i
 	asl
-	tay
-	lda sprites+1,y
+	tax
+	lda sprites+1,x
 	tay
 	lda sprites,x
 	tax
@@ -557,17 +566,26 @@ __room_look:
 	adc @xpos
 	sta @xstop
 
-	jsr app::curx
+	lda xpos
 	cmp @xpos
 	bcc @next
 	cmp @xstop
 	bcs @next
 
-	jsr app::cury
+	sec
+	sbc @xpos
+	sta relx
+
+	lda ypos
 	cmp @ypos
 	bcc @next
 	cmp @ystop
 	bcs @next
+
+	sec
+	sbc @ypos
+	sta rely
+
 	lda @i
 	ldx @use_or_look	; do we want to LOOK or USE the selected thing?
 	bne @look

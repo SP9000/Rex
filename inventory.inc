@@ -3,7 +3,7 @@
 .import __inventory_items
 .import __inventory_len
 .import __inventory_itemname
-.import __inventory_selection
+.import __inventory_selection	; the index of the selected #
 .import __inventory_select
 
 .scope inv

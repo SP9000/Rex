@@ -21,6 +21,11 @@ namebuff: .res MAX_ITEMS*ITEM_NAME_LEN
 .export __inventory_selection
 __inventory_selection: .byte 0
 
+scroll: .byte 0
+
+.export item
+item:   .byte 0
+
 ;--------------------------------------
 ; add adds the item of the ID in .A to the player's inventory.
 ; the name is given in zp::arg0 and the description in zp::arg1
@@ -125,7 +130,12 @@ __inventory_selection: .byte 0
 	rts
 :	cmp __inventory_len
 	bcc @redraw
+	rts
 @redraw:
 	sta __inventory_selection
+	lda scroll
+	asl
+	adc __inventory_selection
+	sta item
 	jmp gui::drawinv
 .endproc

@@ -13,6 +13,7 @@
 .struct Sprite 
         xpos    .byte   ;the x coordinate
         ypos    .byte   ;the y coordinate
+	flags   .byte   ;flags (unused)
 	data	.word	;ptr to rest of data
 .endstruct
 

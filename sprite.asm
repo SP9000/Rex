@@ -281,14 +281,14 @@ __sprite_draw:
 	stx @spr
 	sty @spr+1
 
-	ldy #3
+	ldy #Sprite::data
 	lda (@spr),y
 	tax
 	iny
 	lda (@spr),y
 	stx @spr
 	sta @spr+1
-	ldy #$00
+	ldy #SpriteDat::W
 	lda (@spr),y
 	tax
 	iny
@@ -346,6 +346,30 @@ __sprite_draw:
 	tax
 	lda @msb
 	adc #$00
+	rts
+.endproc
+
+;--------------------------------------
+; xpos returns the x-position of the sprite in (YX)
+.export __sprite_xpos
+.proc __sprite_xpos
+@spr=zp::tmp0
+	stx @spr
+	sty @spr+1
+	ldy #$00
+	lda (@spr),y
+	rts
+.endproc
+
+;--------------------------------------
+; ypos returns the y-position of the sprite in (YX)
+.export __sprite_ypos
+.proc __sprite_ypos
+@spr=zp::tmp0
+	stx @spr
+	sty @spr+1
+	ldy #$01
+	lda (@spr),y
 	rts
 .endproc
 

@@ -81,20 +81,27 @@ SCREEN_START_ADDR = ($1100 + ($c0*4) + 16)
 .endproc
 
 ;--------------------------------------
-; blink flashes the screen .A times at the speed given in .X
+; blink flashes the screen .A color .X times at the speed given in .Y
 .export __fx_blink
 .proc __fx_blink
 @times=zp::tmp0
-@spd=zp::tmp0
-	sta @times
-	stx @spd
-	lda #$20
-@l0:	lda #$08
-	eor $900f
-	sta $900f
+@spd=zp::tmp1
+@color=zp::tmp2
+@color2=zp::tmp3
+	stx @times
+	sty @spd
+	sta @color
+	lda $900f
+	sta @color2
 
-	lda #$20
+@l0:	lda @color
+	cmp $900f
+	bne :+
+	lda @color2
+:	sta $900f
+
 	ldx @spd
+	lda #$20
 @l1:	cmp $9004
 	bne *-3
 	dex
@@ -102,9 +109,8 @@ SCREEN_START_ADDR = ($1100 + ($c0*4) + 16)
 	dec @times
 	bpl @l0
 
-	; always end on non-inverted colors
-	lda $900f
-	and #$f7
+	; always end on OG color
+	lda @color2
 	sta $900f
 	rts
 .endproc

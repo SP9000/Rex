@@ -177,6 +177,7 @@ class Gardener(Thing):
         self.name = "gardener"
         self.pic = "sprites/gardener.png"
         self.description = "The menacing man snarls at you from the end of the gazebo"
+        self.handler = "things/gardener_use.asm"
 
 class Bone(Thing):
     def __init__(self):
@@ -334,7 +335,7 @@ class Gazebo(Room):
         self.description = "the gazebo is in relatively good shape. it seems newly built compared to the other worn remains that dot the garden."
         self.exits = {"S": "GARDEN.PRG"}
         self.things = [
-            Bone(), 
+            #Bone(), 
             Gardener(),
         ]
 

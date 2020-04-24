@@ -1,3 +1,5 @@
+.include "base.inc"
+.include "constants.inc"
 .include "handlers.inc"
 .include "types.inc"
 .CODE
@@ -41,7 +43,7 @@
 @chkf:  lda #$20
         bit $9111       ;fire pressed?
         bne @chkr
-        on_fire         ;do the right button behavior
+	jsr fire
 @chkr:  lda $9120       ;right button pressed? (bit 7)
         bmi @done
         on_right        ;do the fire button behavior
@@ -53,3 +55,16 @@
  	rts
 .endproc
 
+;--------------------------------------
+.proc fire
+	ldx xpos
+	ldy ypos
+	lda action
+	cmp #ACTION_LOOK
+	bne :+
+	jmp room::look
+:	cmp #ACTION_USE
+	bne :+
+	jmp room::use
+:	rts
+.endproc

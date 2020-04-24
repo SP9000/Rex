@@ -1,3 +1,4 @@
+.include "constants.inc"
 .include "gui.inc"
 .include "handlers.inc"
 .include "inventory.inc"
@@ -98,6 +99,21 @@ repeat: .byte REPEAT_TMR
 	bne :+
 	lda #$09
 	jmp inv::select
+
+:	cmp #$36	; L
+	bne :+
+	lda #ACTION_LOOK
+	jmp app::setaction
+
+:	cmp #$75	; O
+	bne :+
+	lda #ACTION_USE
+	jmp app::setaction
+
+:	cmp #$73	; T
+	bne :+
+	lda #ACTION_TAKE
+	jmp app::setaction
 
 :	rts
 .endproc

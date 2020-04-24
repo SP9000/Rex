@@ -51,20 +51,18 @@
 .macro on_fire
 .local @do
 .local @done
-	lda gfx::cursorsprite+Sprite::data
-	cmp #<gfx::eye
-	bne @do
-	lda gfx::cursorsprite+Sprite::data+1
-	cmp #>gfx::eye
-	bne @do
-	jsr room::look
-	jmp @done
-@do:    jsr room::use
-@done:
+	lda action
+	cmp #ACTION_USE
+	bne :+
+	jmp room::use
+:	cmp #ACTION_LOOK
+	bne @done
+	jmp room::look
+@done:	rts
 .endmacro
 
 ;------------------
 ;put your 'SPACE' button handler here
 .macro on_space
-	jsr app::togglecur
+	rts
 .endmacro
