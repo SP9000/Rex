@@ -101,11 +101,11 @@ SCREEN_START_ADDR = ($1100 + ($c0*4) + 16)
 :	sta $900f
 
 	ldx @spd
-	lda #$20
-@l1:	cmp $9004
-	bne *-3
+@l1:	cpx $9004
+	bne @l1
 	dex
-	bpl @l1
+	bne @l1
+
 	dec @times
 	bpl @l0
 

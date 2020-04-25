@@ -17,7 +17,7 @@
 
 .macro blink2 color
 	lda color
-	ldx #2
-	ldy #60
+	ldx #4
+	ldy #10
 	jsr __fx_blink
 .endmacro

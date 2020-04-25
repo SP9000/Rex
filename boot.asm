@@ -1,6 +1,7 @@
 .include "app.inc"
 .include "app_sprites.inc"
 .include "bitmap.inc"
+.include "driver.inc"
 .include "file.inc"
 .include "irq.inc"
 .include "joystick.inc"
@@ -22,15 +23,16 @@ head: .word @Next
 ;------------------------------------------------------------------------------
 start:
         jsr joy::init
-        ldx #<irq_handler
-        ldy #>irq_handler
-        lda #$20
-        jsr irq::raster
+	jsr driver::init
         jmp enter
 
 ;------------------------------------------------------------------------------
 .CODE
 enter:
+        ldx #<irq_handler
+        ldy #>irq_handler
+        lda #$20
+        jsr irq::raster
         jsr bm::init
         jsr bm::clr
 
@@ -58,7 +60,8 @@ main:
 
 irq_handler:
 	jsr key::update
-        jmp $eabf
+	jsr driver::play
+	jmp $eabf
 
 overlayfile:
 	.byt "overlay.prg"

@@ -40,6 +40,9 @@ irq1 = $e7
 irq2 = $e8
 irq3 = $e9
 irq4 = $ea
+;--------------------------------------
+;song (IRQ) storage
+song = $33c
 
 .endscope
 

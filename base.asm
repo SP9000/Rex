@@ -23,5 +23,5 @@ diemsg: .byte "your journey ends here.",0
 	jsr gui::txt
 	lda #0
 	sta text::speed
-	jmp *
+	rts
 .endproc
