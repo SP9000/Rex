@@ -22,7 +22,6 @@ head: .word @Next
 @Next: .word 0
 ;------------------------------------------------------------------------------
 start:
-        jsr joy::init
 	jsr driver::init
         jmp enter
 

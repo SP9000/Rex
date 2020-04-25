@@ -125,11 +125,11 @@ SA=2
 .export __file_load
 .proc __file_load
 	jsr $ffbd     ; call SETNAM
-	lda #$01
 	ldx $ba       ; last used device number
 	bne :+
 	ldx #$08      ; default to device 8
-:	ldy #$01      ; not $01 means: load to address stored in file
+:	lda #$01
+	ldy #$02      ; not $01 means: load to address stored in file
 	jsr $ffba     ; call SETLFS
 	lda #$00      ; $00 means: load to memory (not verify)
 	jsr $ffd5     ; call LOAD
@@ -137,6 +137,7 @@ SA=2
 	rts
 @error:
 	inc $900f
+	jmp *-3
 	jmp @error
 .endproc
 
