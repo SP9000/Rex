@@ -14,6 +14,9 @@ export:
 test:
 	xvic -drive8type 1541 +truedrive -virtualdev -memory all -ntsc -8 rex.d64 rex.d64
 
+test-td:
+	xvic -drive8type 1541 -truedrive -virtualdev -memory all -ntsc -8 rex.d64 rex.d64
+
 draw:
 	xvic +truedrive -virtualdev +warp -memory all -ntsc minipaint.d64
 

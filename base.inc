@@ -1,6 +1,7 @@
 ;--------------------------------------
 ; this file contains the most useful routines and variables for scripts
 
+
 ;--------------------------------------
 ; data
 .import xpos ; the x-position of the cursor
@@ -13,3 +14,8 @@
 ;--------------------------------------
 ; routines
 .import die  ; game over
+.import hit  ; hit effect
+.import remove ; remove id
+
+; UI routines
+.import alert ; display a message and wait for FIRE

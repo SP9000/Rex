@@ -43,6 +43,12 @@ action: .byte 0
 	beq @setselect
 	cmp #ACTION_TAKE
 	beq @settake
+	cmp #ACTION_LOOK
+	beq @setlook
+@setnone:
+	ldx #<@none
+	ldy #>@none
+	jmp @set
 @setlook:
 	ldx #<@look
 	ldy #>@look
@@ -55,8 +61,9 @@ action: .byte 0
 	ldx #<@take
 	ldy #>@take
 @set:	jmp gui::action
+@none: .byte "    ",0
 @look: .byte "look",0
-@use: .byte "use",0
+@use: .byte "use ",0
 @take: .byte "take",0
 .endproc
 

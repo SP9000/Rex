@@ -1,4 +1,5 @@
 .import __room_load
+.import __room_remove
 .import __room_gethandle 
 .import __room_getsprite
 .import __room_getdesc
@@ -14,6 +15,7 @@
 
 .scope room
 	load = __room_load ; loads the room at address (YX)
+	remove = __room_remove ; remove the thing with the given ID (in .A)
 	update = __room_update
 	gethandle = __room_gethandle
 	getsprite = __room_getsprite

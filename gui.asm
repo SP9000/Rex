@@ -1,5 +1,6 @@
 .include "bitmap.inc"
 .include "inventory.inc"
+.include "joystick.inc"
 .include "macros.inc"
 .include "memory.inc"
 .include "math.inc"
@@ -22,6 +23,9 @@ NAME_COL_STOP =  20
 
 ACTION_COL = 9
 ACTION_ROW = 1
+
+ALERT_COL = 7
+ALERT_ROW = 23
 
 ; the bounds of the inventory area
 INV_COL_START = 2
@@ -157,6 +161,27 @@ console: .byte 0,16,16,4
 	cmp #TXT_ROW_STOP
 	bcc @l0
 @0:	rts
+.endproc
+
+;--------------------------------------
+; alert display the message in (YX) and prompts the user to press fire to
+; continue.
+.export __gui_alert
+.proc __gui_alert
+	jsr __gui_txt
+	lda #ALERT_COL
+	sta text::colstart
+	lda #ALERT_ROW
+	ldx #<@firemsg
+	ldy #>@firemsg
+	jsr text::print
+
+@waitfire:
+	jsr joy::poll
+	cmp #$00
+	beq @waitfire
+	rts
+@firemsg: .byte "press fire",0
 .endproc
 
 ;--------------------------------------

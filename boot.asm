@@ -7,6 +7,7 @@
 .include "joystick.inc"
 .include "key.inc"
 .include "room.inc"
+.include "sfx.inc"
 .include "sprite.inc"
 .include "text.inc"
 
@@ -59,8 +60,11 @@ main:
 
 irq_handler:
 	jsr key::update
+	jsr sfx::update
+	lda sfx::playing
+	bne :+
 	jsr driver::play
-	jmp $eabf
+:	jmp $eabf
 
 overlayfile:
 	.byt "overlay.prg"

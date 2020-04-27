@@ -21,7 +21,7 @@ NUM_EXITS=6
 ;--------------------------------------
 numrooms: .byt 0
 
-idstable: .res MAX_THINGS*2
+idstable: .res MAX_THINGS
 nametable: .res MAX_THINGS*2
 desctable: .res MAX_THINGS*2
 setuptable: .res MAX_THINGS*2
@@ -36,6 +36,60 @@ description: .word 0
 
 ; the addresses for room names for N,S,E,W,U,D
 exits: .res 2*6
+
+;--------------------------------------
+; removes the thing with the given ID from the room
+.export __room_remove
+.proc __room_remove
+	ldx numthings
+@l0:	dex
+	bmi @done
+	cmp idstable,x
+	bne @l0
+	lda #$00
+	sta idstable,x
+	txa
+	tay
+
+:	lda idstable+1,y
+	sta idstable,y
+	iny
+	cpy numthings
+	bne :-
+
+	txa
+	asl
+	tax
+	ldy #$00
+@l1:	lda sprites+2,x
+	sta sprites,x
+	lda sprites+3,x
+	sta sprites+1,x
+
+	lda desctable+2,x
+	sta desctable,x
+	lda desctable+3,x
+	sta desctable+1,x
+
+	lda nametable+2,x
+	sta nametable,x
+	lda nametable+3,x
+	sta nametable+1,x
+
+	lda handlertable+2,x
+	sta handlertable,x
+	lda handlertable+3,x
+	sta handlertable+1,x
+	inx
+	inx
+	iny
+	cpy numthings
+	bne @l1
+
+	dec numthings
+
+@done:	rts
+.endproc
 
 ;--------------------------------------
 ; addthing adds the thing in (YX) to the room

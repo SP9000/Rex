@@ -6,6 +6,7 @@
 .import __gui_clrtxt
 .import __gui_wrect
 .import __gui_action
+.import __gui_alert
 
 .struct TextRegion
 	xpos .byte
@@ -23,4 +24,5 @@
 	textinput = __gui_textinput ; display text in (YX) and get user input
 	wrect = __gui_wrect ; draw a white rectangle from (.X,.Y) to (zp::tmp0,zp::tmp1)
 	action = __gui_action
+	alert = __gui_alert ; displays a message and waits for FIRE to be pressed
 .endscope
