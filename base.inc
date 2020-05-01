@@ -1,3 +1,6 @@
+.ifndef BASE_INC
+BASE_INC=1
+
 ;--------------------------------------
 ; this file contains the most useful routines and variables for scripts
 
@@ -19,3 +22,5 @@
 
 ; UI routines
 .import alert ; display a message and wait for FIRE
+
+.endif

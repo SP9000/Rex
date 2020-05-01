@@ -4,6 +4,74 @@
 
 SCREEN_START_ADDR = ($1100 + ($c0*4) + 16)
 
+.proc delay
+	txa
+	pha
+	ldx #20
+:	lda #$04
+	cmp $9004
+	bne *-3
+	dex
+	bpl :-
+	pla
+	tax
+	rts
+.endproc
+
+
+;--------------------------------------
+; .Y stores the amplitude, and .X the # of times to shake
+.export __fx_vshake
+.proc __fx_vshake
+@amp=zp::tmp0
+	sty @amp
+@l0:	ldy @amp
+@l1:	inc $9001
+	jsr delay
+	dey
+	bne @l1
+	ldy @amp
+@l2:	dec $9001
+	jsr delay
+	dey
+	bne @l2
+	dex
+	bne @l0
+	rts
+.endproc
+
+;--------------------------------------
+; .Y stores the amplitude, and .X the # of times to shake, and .A the blink
+; color
+.export __fx_vshakeblink
+.proc __fx_vshakeblink
+@amp=zp::tmp0
+@color1=zp::tmp1
+@color2=zp::tmp2
+	sta @color2
+	lda $900f
+	sta @color1
+	sty @amp
+
+@l0:	ldy @amp
+	lda @color2
+	sta $900f
+@l1:	inc $9001
+	jsr delay
+	dey
+	bne @l1
+	lda @color1
+	sta $900f
+	ldy @amp
+@l2:	dec $9001
+	jsr delay
+	dey
+	bne @l2
+	dex
+	bne @l0
+	rts
+.endproc
+
 ;--------------------------------------
 .export __fx_fadeout
 .proc __fx_fadeout

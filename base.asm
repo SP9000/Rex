@@ -40,7 +40,7 @@ diemsg: .byte "your journey ends here.",0
 .export hit
 .proc hit
 	jsr sfx::hit
-	blink2 #2
+	vshakeblink #2,#4,#2
 	rts
 .endproc
 
