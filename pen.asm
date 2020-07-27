@@ -6,6 +6,46 @@
 __pen_stroke: .byte 1
 
 ;--------------------------------------
+; hstroke draws the # of pixels in stroke vertically (as if the pen is
+; moving horizontally) at (.X, .Y)
+.proc hstroke
+@x=zp::tmp5
+@y=zp::tmp6
+@cnt=zp::tmp7
+	stx @x
+	sty @y
+	lda __pen_stroke
+	sta @cnt
+@l0:	ldx @x
+	ldy @y
+	jsr bm::setpixel
+	inc @y
+	dec @cnt
+	bne @l0
+	rts
+.endproc
+
+;--------------------------------------
+; vstroke draws the # of pixels in stroke horizontally (as if the pen is
+; moving vertically) at (.X, .Y)
+.proc vstroke
+@x=zp::tmp5
+@y=zp::tmp6
+@cnt=zp::tmp7
+	stx @x
+	sty @y
+	lda __pen_stroke
+	sta @cnt
+@l0:	ldx @x
+	ldy @y
+	jsr bm::setpixel
+	inc @x
+	dec @cnt
+	bne @l0
+	rts
+.endproc
+
+;--------------------------------------
 .export __pen_restorerow
 .proc __pen_restorerow
         txa
@@ -37,7 +77,7 @@ __pen_stroke: .byte 1
 @y = zp::arg2
 @l0:	ldx @x0
 	ldy @y
-	jsr bm::setpixel
+	jsr hstroke
 	inc @x0
 	lda @x0
 	cmp @x1
