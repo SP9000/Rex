@@ -11,6 +11,9 @@ export:
 	python3 import_png.py overlay.png overlay.prg 0x1100
 	python3 rooms.py
 
+setup:
+	pip3 install pillow
+
 test:
 	xvic -drive8type 1541 +truedrive -virtualdev -memory all -ntsc -8 rex.d64 rex.d64
 

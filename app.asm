@@ -2,6 +2,8 @@
 .include "base.inc"
 .include "constants.inc"
 .include "gui.inc"
+.include "inventory.inc"
+.include "room.inc"
 .include "sprite.inc"
 .include "types.inc"
 .CODE
@@ -91,3 +93,12 @@ action: .byte 0
 __app_cursor:
 .word gfx::cursorsprite
 
+;--------------------------------------
+; removes the item in .A and gives it to the player
+.export __app_take
+.proc __app_take
+	pha
+	jsr room::remove
+	pla
+	jmp inv::add
+.endproc

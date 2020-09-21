@@ -87,6 +87,7 @@ class Thing:
     def writeIncfile(self, nameAddr, descAddr, spriteAddr):
         # write an include file for the handler to use
         strs = [
+                "ID = $" + hex(self.id)[2:] + '\n',
                 "name = $" + hex(nameAddr)[2:] + '\n',
                 "description = $" + hex(descAddr)[2:] + '\n',
                 "sprite = $" + hex(spriteAddr)[2:] + '\n'
@@ -335,7 +336,7 @@ class Gazebo(Room):
         self.description = "the gazebo is in relatively good shape. it seems newly built compared to the other worn remains that dot the garden."
         self.exits = {"S": "GARDEN.PRG"}
         self.things = [
-            #Bone(), 
+            Bone(), 
             Gardener(),
         ]
 
