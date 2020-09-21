@@ -11,8 +11,6 @@
 .include "sprite.inc"
 .include "text.inc"
 
-.import test
-
 ;------------------------------------------------------------------------------
 .segment "SETUP"
 .word head
@@ -48,7 +46,6 @@ enter:
 	jsr room::load
 	jsr room::update
 
-	jsr test
 main:
         lda #$70
         cmp $9004

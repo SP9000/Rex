@@ -17,7 +17,7 @@
 ;------------------
 ;put your left-button handler here
 .macro on_left
-	ldx #-1
+	ldx #255
 	ldy #0
 	jsr app::movecur
 .endmacro 
@@ -34,7 +34,7 @@
 ;put your up-button handler here
 .macro on_up
 	ldx #0
-	ldy #-1
+	ldy #255
 	jsr app::movecur
 .endmacro 
 

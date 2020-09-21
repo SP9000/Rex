@@ -1,6 +1,7 @@
 import os
 import tempfile
 import subprocess
+from os.path import dirname
 from PIL import Image
 
 def makeIncludeFile(filename):
@@ -13,6 +14,7 @@ def makeIncludeFile(filename):
         out.write(parts[2][1:] + " = $" + parts[1][2:] + "\n")
     infile.close()
     out.close()
+    os.sync() 
     return os.path.basename(out.name)
 
 idsByName = {}
@@ -24,6 +26,7 @@ def makeItemFile(items):
         f.write('ITEM_' + thing.name + " = " + str(handle) + '\n')
         idsByName[thing.name] = handle
     f.close()
+    os.sync() 
 
 #######################################
 # Things
